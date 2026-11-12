@@ -17,9 +17,14 @@ description: >-
 - Do not suggest unsigned downloads, Gatekeeper workarounds, or copying into
   `/usr/bin` with sudo.
 - Audience: can copy-paste Terminal commands; explain PATH explicitly.
-- Docs: README must cover Git → repository → Go → other dependencies → Install →
-  Verify → PATH fix → Update.
-- There needs to be a link to or description of how to install and upgrade Git and the repository. The description, whether included or linked to, needs to use non-technical plain English.
+- Docs: README must start with a plain-English upfront note that downloading
+  this project’s files is **not** required to install the command-line tools;
+  install-only users skip the repository section. Then cover Git → Go → other
+  dependencies → Install → Verify → PATH fix → Update. Document **Repository**
+  separately as optional (local source copy only), after Update.
+- There needs to be a link to or description of how to install and upgrade Git
+  and (for people who want a local copy) the repository. The description,
+  whether included or linked to, needs to use non-technical plain English.
 - The same plain-English rule applies to **Go** (install and update) and to **any
   other dependencies** required to install or update the command-line utilities.
   When a new dependency appears, add or link a non-technical install-and-update
@@ -42,14 +47,15 @@ If there is no `cmd/`, ask which main packages to install.
 
 1. Ensure Git is installed (`git --version`); if not, follow the README’s plain-English
    Git section or link.
-2. Optional but documented: clone or update the repository (see README).
-3. Ensure Go meets `go.mod` (`go version`); if not, follow the README’s plain-English
+2. Ensure Go meets `go.mod` (`go version`); if not, follow the README’s plain-English
    Go install/update section or link, then open a new terminal.
-4. Ensure any other documented dependencies are installed/updated the same way.
-5. `go install` each `cmd/...` as above.
-6. Binaries: `$(go env GOBIN)` or `$(go env GOPATH)/bin`.
-7. Verify: `command -v <name>` (Windows: `where <name>`).
-8. If missing → PATH section in the template; new terminal; recheck.
+3. Ensure any other documented dependencies are installed/updated the same way.
+4. `go install` each `cmd/...` as above (`…@latest` does not require a local clone).
+5. Binaries: `$(go env GOBIN)` or `$(go env GOPATH)/bin`.
+6. Verify: `command -v <name>` (Windows: `where <name>`).
+7. If missing → PATH section in the template; new terminal; recheck.
+8. Optional: clone or update the repository only when a local source copy is needed
+   (see README repository section).
 
 ## README updates
 
@@ -59,8 +65,9 @@ module path, `cmd` names, Go version, clone URL, and dependency list.
 Required doc pieces (each install **and** update path in non-technical plain
 English, inline or linked):
 
-1. **Git** — install and upgrade.
-2. **Repository** — first-time download/clone and later upgrade (`git pull`).
+1. **Upfront note** — install-only users do **not** need to download the project’s
+   files; skip the repository section; `go install …@latest` fetches what it needs.
+2. **Git** — install and upgrade.
 3. **Go** — what Go is in one plain sentence; install the version from `go.mod`;
    how to update Go later; confirm with `go version` after a new terminal.
 4. **Other dependencies** — for every extra tool or runtime needed to install or
@@ -71,7 +78,10 @@ English, inline or linked):
 7. **PATH fix** — if not found: print bin dir, exact zsh/bash (and short Windows) steps,
    new terminal, recheck.
 8. **Update the CLIs** — upgrade Git/Go/other dependencies as needed, update the
-   repo copy if used, then re-run the same `go install …@latest` commands.
+   repo copy **only if used**, then re-run the same `go install …@latest` commands.
+9. **Repository (optional)** — after Update: first-time download/clone and later
+   upgrade (`git pull`) for people who want a local source copy. State clearly that
+   this is optional for installing the commands.
 
 Official download pages may be linked; surrounding README text must stay plain English.
 Do not lead with `go build` for end users.

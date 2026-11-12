@@ -4,10 +4,21 @@ Fill `MODULE`, `CMD` (repeat per command), `MIN_GO`, and `CLONE_URL` from the re
 Keep every section in non-technical plain English. Prefer short numbered steps and
 copy-paste commands.
 
-For **Git**, **repository**, **Go**, and **any other dependency** needed to install
-or update the CLIs: include a plain-English description **or** a link to one that
-covers both install and update. If linking out, the link target must suit
-non-technical readers; add a one-line summary beside the link.
+Start with the upfront note below. For **Git**, **Go**, and **any other dependency**
+needed to install or update the CLIs: include a plain-English description **or** a
+link to one that covers both install and update. If linking out, the link target
+must suit non-technical readers; add a one-line summary beside the link.
+
+Document **This project’s files (repository)** only as optional, **after Update**.
+
+## Upfront note (required)
+
+Before **Git**, say in plain English:
+
+- If you only want the command-line program(s), you do **not** need to download
+  this project’s files.
+- Skip **This project’s files (optional)** below.
+- The Install step uses `go install …@latest`, which fetches what it needs.
 
 ## Git (required)
 
@@ -18,27 +29,6 @@ non-technical readers; add a one-line summary beside the link.
   platform’s upgrade steps).
 
 Afterward: open a new Terminal and run `git --version` to confirm it worked.
-
-## This project’s files (repository) (required)
-
-- **Install (first time)** — download a full copy of the project, e.g.:
-
-  ```bash
-  git clone CLONE_URL
-  cd REPO_DIR
-  ```
-
-  Say where the files will appear (a new folder on their computer).
-
-- **Upgrade (later)** — get the latest project files:
-
-  ```bash
-  cd REPO_DIR
-  git pull
-  ```
-
-Explain that this updates the source files; updating the installed commands is a
-separate step under **Update** below (re-run `go install`).
 
 ## Go (required)
 
@@ -129,3 +119,27 @@ user Path in Environment Variables, then open a new Command Prompt and run
 4. Update the project files if you use a local copy (`git pull`, see repository section).
 5. Re-run the same `go install …@latest` commands as in Install.
 6. Run `command -v` again.
+
+## This project’s files (repository) (optional)
+
+Only for people who want a local copy of the project files. Not required to install
+or update the command-line program(s).
+
+- **Install (first time)** — download a full copy of the project, e.g.:
+
+  ```bash
+  git clone CLONE_URL
+  cd REPO_DIR
+  ```
+
+  Say where the files will appear (a new folder on their computer).
+
+- **Upgrade (later)** — get the latest project files:
+
+  ```bash
+  cd REPO_DIR
+  git pull
+  ```
+
+Explain that this updates the source files; updating the installed commands is a
+separate step under **Update** above (re-run `go install`).
