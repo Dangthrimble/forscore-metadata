@@ -7,7 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"fn2fm/internal/names"
 )
+
+// cliTestEnv isolates subprocesses from any saved dictionary path on the host.
+func cliTestEnv(t *testing.T, extra ...string) []string {
+	t.Helper()
+	env := append(os.Environ(), names.ConfigDirEnv+"="+t.TempDir())
+	return append(env, extra...)
+}
 
 // Invoke the real command entry point in a subprocess so os.Exit and working
 // directory behaviour are covered without needing a separately installed app.
@@ -43,7 +52,7 @@ func TestFN2FMStandaloneCommand(t *testing.T) {
 			writeTestFile(t, filepath.Join(dir, "names.json"), []byte(tc.dictionary))
 			cmd := exec.Command(os.Args[0], "-test.run=^TestFN2FMCLIHelper$", "--", name)
 			cmd.Dir = dir
-			cmd.Env = append(os.Environ(), "FN2FM_TEST_MAIN=1", "PATH="+dir)
+			cmd.Env = cliTestEnv(t, "FN2FM_TEST_MAIN=1", "PATH="+dir)
 			output, err := cmd.CombinedOutput()
 			if (err != nil) != tc.wantError {
 				t.Fatalf("unexpected exit: %v\n%s", err, output)
@@ -84,7 +93,7 @@ func TestFN2FMRenameFailure(t *testing.T) {
 
 	cmd := exec.Command(os.Args[0], "-test.run=^TestFN2FMCLIHelper$", "--", name)
 	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), "FN2FM_TEST_MAIN=1", "PATH="+dir)
+	cmd.Env = cliTestEnv(t, "FN2FM_TEST_MAIN=1", "PATH="+dir)
 	output, err := cmd.CombinedOutput()
 	if err == nil {
 		t.Fatalf("expected nonzero exit when rename fails\n%s", output)
@@ -112,7 +121,7 @@ func TestFN2FMEmptyKeyCommand(t *testing.T) {
 			writeTestFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":"John Rutter"}`))
 			cmd := exec.Command(os.Args[0], "-test.run=^TestFN2FMCLIHelper$", "--", name)
 			cmd.Dir = dir
-			cmd.Env = append(os.Environ(), "FN2FM_TEST_MAIN=1", "PATH="+dir)
+			cmd.Env = cliTestEnv(t, "FN2FM_TEST_MAIN=1", "PATH="+dir)
 			if output, err := cmd.CombinedOutput(); err != nil {
 				t.Fatalf("command failed: %v\n%s", err, output)
 			}
