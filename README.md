@@ -3,6 +3,10 @@
 See the [backlog](BACKLOG.md) for outstanding work and the
 [development history](DEVELOPMENT_HISTORY.md) for completed work and decisions.
 
+If you only want the command-line program, you do **not** need to download this
+project’s files. Skip **This project’s files (optional)** below. The **Install**
+step uses `go install …@latest`, which fetches what it needs.
+
 ## Git
 
 Git is a tool that downloads and updates project files on your computer.
@@ -15,26 +19,6 @@ Open a **new** Terminal window and check:
 ```bash
 git --version
 ```
-
-## This project’s files (repository)
-
-- **First time:** download a full copy of the project. In Terminal:
-
-  ```bash
-  git clone https://github.com/Dangthrimble/fn2fm.git
-  cd fn2fm
-  ```
-
-  This creates a folder named `fn2fm` with the project files inside.
-
-- **Later:** get the latest project files:
-
-  ```bash
-  cd fn2fm
-  git pull
-  ```
-
-Updating these files does **not** by itself update the installed command. To refresh the command, follow **Update** below.
 
 ## Go
 
@@ -111,6 +95,29 @@ Go puts the program in a `bin` folder that your computer may not search yet.
 3. If you keep a local copy of the project, run `git pull` (see **This project’s files**).
 4. Re-run the same `go install …@latest` command as in **Install**.
 5. Run `command -v fn2fm` again.
+
+## This project’s files (optional)
+
+Only if you want a local copy of the project files. Not required to install or
+update the command-line program.
+
+- **First time:** download a full copy of the project. In Terminal:
+
+  ```bash
+  git clone https://github.com/Dangthrimble/fn2fm.git
+  cd fn2fm
+  ```
+
+  This creates a folder named `fn2fm` with the project files inside.
+
+- **Later:** get the latest project files:
+
+  ```bash
+  cd fn2fm
+  git pull
+  ```
+
+Updating these files does **not** by itself update the installed command. To refresh the command, follow **Update** above.
 
 ## Running fn2fm
 
