@@ -12,6 +12,9 @@ const (
 	defaultNamesFile = "names.json"
 	configDirName    = "fn2fm"
 	configFileName   = "config.json"
+	// ConfigDirEnv overrides the directory that holds config.json. Used by tests
+	// so Windows runners (where HOME/XDG do not affect UserConfigDir) stay isolated.
+	ConfigDirEnv = "FN2FM_CONFIG_DIR"
 )
 
 // Config holds optional user preferences. An absent file means no saved path.
@@ -21,6 +24,9 @@ type Config struct {
 
 // ConfigPath returns the absolute path of the user config file.
 func ConfigPath() (string, error) {
+	if override := strings.TrimSpace(os.Getenv(ConfigDirEnv)); override != "" {
+		return filepath.Join(override, configFileName), nil
+	}
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err

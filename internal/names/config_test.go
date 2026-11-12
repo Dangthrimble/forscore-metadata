@@ -1,23 +1,16 @@
 package names
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestResolvePathOrder(t *testing.T) {
 	tmp := t.TempDir()
-	t.Setenv("HOME", tmp)
-	// UserConfigDir on macOS uses HOME/Library/Application Support.
-	// On Linux it may use XDG_CONFIG_HOME.
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "config"))
+	t.Setenv(ConfigDirEnv, filepath.Join(tmp, "config"))
 
 	cwd := t.TempDir()
-	if err := os.Chdir(cwd); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(tmp) })
+	t.Chdir(cwd)
 
 	got, err := ResolvePath("")
 	if err != nil {
@@ -32,9 +25,6 @@ func TestResolvePathOrder(t *testing.T) {
 	}
 
 	shared := filepath.Join(tmp, "shared", "names.json")
-	if err := os.MkdirAll(filepath.Dir(shared), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	if err := SetNamesPath(shared); err != nil {
 		t.Fatal(err)
 	}
@@ -42,8 +32,12 @@ func TestResolvePathOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != shared {
-		t.Fatalf("config path: got %q want %q", got, shared)
+	absShared, err := filepath.Abs(shared)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != absShared {
+		t.Fatalf("config path: got %q want %q", got, absShared)
 	}
 
 	flag := filepath.Join(tmp, "flag-names.json")

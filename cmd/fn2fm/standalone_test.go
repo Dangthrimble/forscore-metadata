@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"fn2fm/internal/names"
 	"fn2fm/internal/pdfmeta"
 )
 
@@ -31,7 +32,7 @@ func TestBuiltExecutable(t *testing.T) {
 		dir := t.TempDir()
 		cmd := exec.Command(binary, "--version")
 		cmd.Dir = dir
-		cmd.Env = append(os.Environ(), "PATH="+dir)
+		cmd.Env = append(os.Environ(), "PATH="+dir, names.ConfigDirEnv+"="+t.TempDir())
 		output, err := cmd.CombinedOutput()
 		want := os.Getenv("FN2FM_TEST_VERSION")
 		if want == "" {
@@ -157,8 +158,9 @@ func runBuiltCommand(t *testing.T, binary, dir, path string) ([]byte, error) {
 	defer cancel()
 	cmd := exec.CommandContext(ctx, binary, path)
 	cmd.Dir = dir
-	// Keep Windows system variables, but make external programs unavailable.
-	cmd.Env = append(os.Environ(), "PATH="+dir)
+	// Keep Windows system variables, but make external programs unavailable and
+	// isolate any saved dictionary path on the host.
+	cmd.Env = append(os.Environ(), "PATH="+dir, names.ConfigDirEnv+"="+t.TempDir())
 	return cmd.CombinedOutput()
 }
 
