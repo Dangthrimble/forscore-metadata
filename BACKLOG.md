@@ -47,12 +47,16 @@ current usage is in [README.md](README.md).
   and metadata mapping before implementation.
 - Optionally retain configuration between invocations, including a predefined
   output location. Allow a destination on Box or Dropbox; choose between a locally
-  synchronised folder and direct cloud access during design. Neither is implemented.
-- Allow multiple users to share `names.json`. Define dictionary discovery,
-  updates and concurrent-edit handling.
-- An explicit dictionary-path option was suggested but not agreed. Loading from
-  the current working directory is intentional, so users can keep their dictionary
-  with their PDFs. Executable-directory lookup is not needed for that workflow.
+  synchronised folder and direct cloud access during design. Output-folder
+  retention is not implemented. A saved dictionary path and `--names` override
+  are implemented; see the README.
+- Shared `names.json` via a cloud-synchronised folder, stale-save detection,
+  `names.json.bak`, and the `fn2fm names` browser editor are implemented. Named
+  profiles, layered dictionaries, CSV import/export, URL sync and automatic
+  conflict merge remain out of scope unless revisited.
+- Default loading from the current working directory remains intentional when no
+  saved path or `--names` flag is set. Executable-directory lookup is not needed
+  for that workflow.
 
 ## PDF metadata and forScore compatibility
 
@@ -122,10 +126,8 @@ is a forScore interoperability issue, not a general filename-normalisation task.
 - Rename `filename.ValidateAndExtension` to something clearer. The old name was
   `validateFilenameAndExtension`; the exported name was shortened during the
   layout move and is harder to read.
-- Let dictionary errors and whitespace warnings use the path that was actually
-  loaded. `names.Load` takes a path but still says `names.json` in its messages.
-  That matches today's CLI, which always loads `names.json` from the current
-  folder.
+- Dictionary errors and whitespace warnings now name the path that was loaded.
+  The CLI still prints a leading `Unable to load names.json:` for familiarity.
 - Tidy how a missing or invalid dictionary is reported. The CLI still logs the
   underlying error, then prints `Unable to load names.json`, and skips the extra
   log for malformed JSON by looking at the error text. Behaviour should stay the

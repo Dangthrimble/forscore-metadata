@@ -27,10 +27,13 @@ checksums check integrity only.
 
 fn2fm writes PDF metadata directly using the bundled pdfcpu library. ExifTool is
 no longer required. Keep your editable `names.json` in the folder from which you
-run fn2fm, and pass the PDF filenames as arguments, quoting names with spaces:
+run fn2fm (or configure a path as described under Name dictionary), and pass the
+PDF filenames as arguments, quoting names with spaces:
 
 ```text
 fn2fm "O Holy Night ~ AdAd_DaFo[Bb]+.pdf"
+fn2fm --names /path/to/names.json "O Holy Night ~ AdAd_DaFo[Bb]+.pdf"
+fn2fm names
 ```
 
 The writer supports unencrypted PDF versions 1.4 through 1.7, including PDFs with
@@ -205,16 +208,77 @@ Use empty brackets (`[]`) when no key can be specified, for example for an atona
 ## Name dictionary
 
 The repository supplies `names.example.json` as a starter dictionary. Copy it to
-`names.json` beside your scores and customise that working copy. fn2fm loads
-`names.json` from the current working directory (the folder from which you run
-the command). It does not need to be beside the executable.
+`names.json` beside your scores and customise that working copy.
+
+By default, fn2fm loads `names.json` from the current working directory (the
+folder from which you run the command). It does not need to be beside the
+executable. You can also:
+
+- pass `--names /path/to/names.json` for a single run, or
+- open the dictionary editor and choose **Use this dictionary next time**, which
+  stores that path in the per-user config file (`fn2fm/config.json` under the
+  OS application-config directory).
+
+Resolution order is: `--names`, then the saved path, then `./names.json`. A
+saved path that is missing is an error; fn2fm does not fall back silently.
 
 When loading the dictionary, fn2fm warns if an abbreviation or name has leading
 or trailing whitespace. Warnings identify the affected entry. Processing continues
 with leading and trailing whitespace removed from names before they are used as
 composer or arranger metadata. Abbreviations are not automatically corrected, and
-the dictionary file is not rewritten. Spaces within names, such as `Dan Forrest`,
-are preserved.
+the dictionary file is not rewritten during PDF runs. Spaces within names, such
+as `Dan Forrest`, are preserved.
+
+### Browser dictionary editor
+
+Launch a local editor in your default browser:
+
+```text
+fn2fm names
+fn2fm names /path/to/names.json
+```
+
+The command starts a server bound to `127.0.0.1` on a random port, prints a URL
+that includes an access token, and opens that URL. Press Ctrl+C in the terminal
+to stop. No separate application or internet service is required.
+
+The editor provides:
+
+- a searchable, sortable list of abbreviations and names
+- add, edit and delete forms
+- suggested abbreviations (you can accept or amend them)
+- uniqueness and filename-safety checks
+- the path of the dictionary being edited
+- Open / New, Reload, and **Use this dictionary next time**
+
+Separate several people in one entry with commas, for example
+`Chris Tomlin, Ed Cash, Matt Redman`. Changing or deleting an abbreviation does
+not rename existing PDF files; those filenames will fail lookup until updated.
+
+Each successful save writes the JSON with sorted keys and keeps a single rolling
+backup beside the file as `names.json.bak`. If the file changed on disk since it
+was loaded (for example after a cloud sync), the editor refuses to overwrite and
+asks you to reload.
+
+Abbreviation suggestions follow a documented heuristic and are not guaranteed to
+match every historical entry. Existing abbreviations are never rewritten
+automatically.
+
+### Sharing a dictionary
+
+A small group can keep one `names.json` in a Box, Dropbox or OneDrive folder:
+
+1. Place the shared `names.json` in the synchronised folder.
+2. Each person runs `fn2fm names /path/to/shared/names.json`, then **Use this
+   dictionary next time**.
+3. Prefer one editor at a time. If two people save close together, reload when
+   warned, and recover by hand from `names.json.bak` or a cloud “conflicted
+   copy” sibling if one appears.
+4. There is no locking or automatic merge; informal coordination is enough for
+   infrequent concurrent edits.
+
+PDF processing then uses the same saved path, so the dictionary you maintain is
+the one filenames are checked against.
 
 ## Examples
 

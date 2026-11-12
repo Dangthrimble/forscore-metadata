@@ -15,10 +15,13 @@ The [README](README.md) describes current behaviour.
 - Keep key brackets, but allow their contents to be empty when no key can be
   specified, including for atonal music. This supersedes the earlier rejection
   rule on 25 September 2026.
-- Load the editable `names.json` from the current working directory. The checked-in
-  starter is `names.example.json`; personal dictionaries are not replaced.
+- Load the editable `names.json` from `--names`, else a saved per-user path, else
+  the current working directory. The checked-in starter is `names.example.json`;
+  personal dictionaries are not replaced. Dictionary editing uses `fn2fm names`
+  (local browser UI) with atomic save, `names.json.bak`, and stale-file detection
+  for cloud-synchronised shared copies.
 - Keep the Go layout as `cmd/fn2fm` (CLI), `cmd/buildpackage` (CI packaging), and
-  `internal/{filename,names,pdfmeta}` for shared logic.
+  `internal/{filename,names,namesedit,pdfmeta}` for shared logic.
 - Write PDF Info metadata directly with pdfcpu, using incremental updates to
   preserve original bytes and unrelated metadata. Preserve XMP for compatibility
   with the legacy workflow; Info/XMP synchronisation remains a separate issue.
@@ -709,3 +712,18 @@ packaging, licensing and update review; it was not adopted.
   workflow_dispatch only.
 - Tagged `v0.1.1` on `main` after that workflow landed so the tag commit, package
   commit and embedded `fn2fm --version` match, with no rebuild footnote.
+
+## Shared names.json editor (11 November 2026)
+
+- Extended `internal/names` with load/save/search/CRUD, validation, sorted
+  atomic writes, a rolling `names.json.bak`, stale-hash detection, conflicted-copy
+  sibling warnings, abbreviation suggestions, and similar-name warnings.
+- Added opt-in dictionary path config under the user config directory and a
+  `--names` CLI override. Default remains `./names.json` when nothing is saved.
+- Added `fn2fm names` with a localhost browser editor (`internal/namesedit`),
+  token-gated HTTP API, Open/New/Reload, and “use this dictionary next time”.
+- Documented the shared Box/Dropbox/OneDrive workflow in README and INSTALL.
+  Automated tests cover dictionary operations, suggestions, config resolution
+  and editor HTTP handlers. Manual smoke on each packaged OS remains advisable
+  before a numbered release: create/search/suggest/amend/save/reopen, stale
+  overwrite, and a PDF run that resolves the saved path.
