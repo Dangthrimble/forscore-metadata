@@ -48,7 +48,7 @@ func TestFN2FMStandaloneCommand(t *testing.T) {
 			if (err != nil) != tc.wantError {
 				t.Fatalf("unexpected exit: %v\n%s", err, output)
 			}
-			if tc.name == "malformed dictionary" && !strings.Contains(string(output), "Unable to load names.json: invalid names.json:") {
+			if tc.name == "malformed dictionary" && !strings.Contains(string(output), "Unable to load names.json: invalid ") {
 				t.Fatalf("missing malformed dictionary diagnostic: %s", output)
 			}
 			if tc.wantError {

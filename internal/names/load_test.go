@@ -31,19 +31,20 @@ func TestLoadWhitespaceWarnings(t *testing.T) {
 			if err := os.WriteFile(path, contents, 0600); err != nil {
 				t.Fatal(err)
 			}
-			got, warnings, err := Load(path)
+			got, err := Load(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(got, tc.entries) {
-				t.Fatalf("dictionary values changed: got %#v, want %#v", got, tc.entries)
+			if !reflect.DeepEqual(got.Entries, tc.entries) {
+				t.Fatalf("dictionary values changed: got %#v, want %#v", got.Entries, tc.entries)
 			}
-			joined := strings.Join(warnings, "\n")
-			if count := strings.Count(joined, "WARNING: names.json"); count != tc.warningCount {
+			joined := strings.Join(got.Warnings, "\n")
+			warningMarker := "WARNING: " + path
+			if count := strings.Count(joined, warningMarker); count != tc.warningCount {
 				t.Fatalf("got %d warnings, want %d: %s", count, tc.warningCount, joined)
 			}
-			if len(warnings) != tc.warningCount {
-				t.Fatalf("got %d warning lines, want %d: %#v", len(warnings), tc.warningCount, warnings)
+			if len(got.Warnings) != tc.warningCount {
+				t.Fatalf("got %d warning lines, want %d: %#v", len(got.Warnings), tc.warningCount, got.Warnings)
 			}
 			for _, fragment := range tc.fragments {
 				if !strings.Contains(joined, fragment) {
@@ -58,5 +59,35 @@ func TestLoadWhitespaceWarnings(t *testing.T) {
 				t.Fatal("dictionary file changed")
 			}
 		})
+	}
+}
+
+func TestLoadDuplicateAndCaseConflicts(t *testing.T) {
+	dir := t.TempDir()
+	dupPath := filepath.Join(dir, "dup.json")
+	// Raw JSON with a duplicate key; encoding/json would keep the last value.
+	if err := os.WriteFile(dupPath, []byte(`{"JoRu":"A","JoRu":"B"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(dupPath); err == nil || !strings.Contains(err.Error(), "duplicate abbreviation") {
+		t.Fatalf("expected duplicate error, got %v", err)
+	}
+
+	casePath := filepath.Join(dir, "case.json")
+	if err := os.WriteFile(casePath, []byte(`{"JoRu":"John Rutter","joru":"Other"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(casePath); err == nil || !strings.Contains(err.Error(), "conflict case-insensitively") {
+		t.Fatalf("expected case conflict, got %v", err)
+	}
+}
+
+func TestLoadRejectsNonObject(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "names.json")
+	if err := os.WriteFile(path, []byte(`["JoRu"]`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(path); err == nil || !strings.Contains(err.Error(), "JSON object") {
+		t.Fatalf("expected object error, got %v", err)
 	}
 }

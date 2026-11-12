@@ -3,11 +3,14 @@ Fn2fm parses the filename of a music score in PDF format, deriving and writing
 PDF metadata to that file that can subsequently be fetched by forScore
 [https://forscore.co/].
 It uses specific characters to deliniate the metadata embedded in the filename.
-It requires a JSON file names.json in the folder from which it is invoked.
+It requires a JSON file names.json (by default in the folder from which it is
+invoked), or a configured / --names path.
 
 Usage:
 
-	fn2fm [file ...]
+	fn2fm [flags] [file ...]
+	fn2fm names [path]
+	fn2fm --version
 */
 package main
 
@@ -20,6 +23,7 @@ import (
 
 	"fn2fm/internal/filename"
 	"fn2fm/internal/names"
+	"fn2fm/internal/namesedit"
 	"fn2fm/internal/pdfmeta"
 )
 
@@ -32,36 +36,39 @@ func main() {
 		return
 	}
 
-	var (
-		err    error
-		ca     map[string]string // Map of composers and arrangers with abbreviation as the key
-		file   string            // Song's file
-		fn     string            // Song's filename without the path but including the extension
-		md     string            // Song's metadata embedded in the filename
-		comp   string            // Song's composer(s)
-		arr    string            // Song's arranger(s)
-		key    string            // Song's initial key signature
-		acc    string            // Whether or not the song has an accompaniment
-		failed bool // Whether a PDF update or rejected-file rename failed
-	)
+	if len(os.Args) >= 2 && os.Args[1] == "names" {
+		if err := namesedit.Run(os.Args[2:]); err != nil {
+			fmt.Fprintf(os.Stderr, "fn2fm names: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 
-	var warnings []string
-	ca, warnings, err = names.Load("names.json")
+	namesFlag, files := parseArgs(os.Args[1:])
+	path, err := names.ResolvePath(namesFlag)
+	if err != nil {
+		fmt.Printf("Unable to resolve names dictionary path: %v\n", err)
+		os.Exit(1)
+	}
+
+	dict, err := names.Load(path)
 	if err != nil {
 		// Match prior behaviour: log the underlying error for missing/unreadable files.
-		if !strings.Contains(err.Error(), "invalid names.json:") {
+		if !strings.Contains(err.Error(), "invalid ") {
 			log.Println(err)
 		}
 		fmt.Printf("Unable to load names.json: %v\n", err)
 		os.Exit(1)
 	}
-	for _, warning := range warnings {
+	for _, warning := range dict.Warnings {
 		log.Println(warning)
 	}
+	ca := dict.Entries
 
-	for _, file = range os.Args[1:] {
+	var failed bool
+	for _, file := range files {
 		fmt.Printf("Parsing %q...\n", file)
-		fn, err = filename.ValidateAndExtension(file)
+		fn, err := filename.ValidateAndExtension(file)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			if !renameRejectedFile(file) {
@@ -70,7 +77,7 @@ func main() {
 			continue
 		}
 
-		md, err = filename.ValidateMetadataTags(fn)
+		md, err := filename.ValidateMetadataTags(fn)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			if !renameRejectedFile(file) {
@@ -79,25 +86,25 @@ func main() {
 			continue
 		}
 
-		comp, err = filename.ParseComposers(md, ca)
+		comp, err := filename.ParseComposers(md, ca)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			continue
 		}
 
-		arr, err = filename.ParseArrangers(md, ca)
+		arr, err := filename.ParseArrangers(md, ca)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			continue
 		}
 
-		key, err = filename.ParseKey(md)
+		key, err := filename.ParseKey(md)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			continue
 		}
 
-		acc, err = filename.ParseAccompaniment(md)
+		acc, err := filename.ParseAccompaniment(md)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			continue
@@ -121,6 +128,43 @@ func main() {
 	if failed {
 		os.Exit(1)
 	}
+}
+
+func parseArgs(args []string) (namesFlag string, files []string) {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--names":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "fn2fm: --names requires a path")
+				os.Exit(2)
+			}
+			i++
+			namesFlag = args[i]
+		case strings.HasPrefix(arg, "--names="):
+			namesFlag = strings.TrimPrefix(arg, "--names=")
+		case arg == "--help" || arg == "-h":
+			printUsage()
+			os.Exit(0)
+		case strings.HasPrefix(arg, "-"):
+			fmt.Fprintf(os.Stderr, "fn2fm: unknown flag %s\n", arg)
+			os.Exit(2)
+		default:
+			files = append(files, arg)
+		}
+	}
+	return namesFlag, files
+}
+
+func printUsage() {
+	fmt.Fprintf(os.Stderr, `Usage:
+  fn2fm [--names path] [file ...]
+  fn2fm names [path]
+  fn2fm --version
+
+Loads composer/arranger abbreviations from names.json in the current folder,
+a path saved via the names editor, or --names for a single run.
+`)
 }
 
 // renameRejectedFile moves a filename/tag validation failure aside with the

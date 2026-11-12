@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fn2fm names editor</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1c1b19;
+      --muted: #5c574e;
+      --line: #d5d0c6;
+      --panel: #fffdf8;
+      --accent: #245b4e;
+      --accent-ink: #fff;
+      --warn: #8a4b12;
+      --warn-bg: #fff4e5;
+      --err: #8b1e1e;
+      --err-bg: #fdeeee;
+      --ok: #1f5b2f;
+      --ok-bg: #e8f5eb;
+      --focus: #2f6f9f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 16px/1.45 "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #efe8da 0, transparent 40%),
+        linear-gradient(180deg, #f8f5ee, var(--bg));
+      min-height: 100vh;
+    }
+    header {
+      padding: 1.25rem 1.5rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,253,248,0.9);
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(6px);
+      z-index: 2;
+    }
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.45rem;
+      letter-spacing: 0.01em;
+    }
+    .path {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1rem;
+      padding: 1rem 1.5rem 2rem;
+      max-width: 1100px;
+    }
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    }
+    h2 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+    label { display: block; font-size: 0.92rem; margin: 0.55rem 0 0.2rem; color: var(--muted); }
+    input[type=text] {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+      background: #fff;
+    }
+    input[type=text]:focus {
+      outline: 2px solid var(--focus);
+      border-color: var(--focus);
+    }
+    .hint { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+    button, .button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 0.45rem 0.75rem;
+      font: inherit;
+      cursor: pointer;
+    }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-ink);
+    }
+    button.danger { color: var(--err); border-color: #e2b4b4; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .banner {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .banner.warn { background: var(--warn-bg); color: var(--warn); }
+    .banner.err { background: var(--err-bg); color: var(--err); }
+    .banner.ok { background: var(--ok-bg); color: var(--ok); }
+    .search { margin-bottom: 0.75rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.45rem 0.35rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+    tr:hover td { background: #f3efe6; }
+    tr.selected td { background: #e7f0ec; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      background: #f3efe6;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .similar { margin-top: 0.5rem; font-size: 0.9rem; color: var(--warn); }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>fn2fm dictionary</h1>
+    <div class="path" id="path">Loading…</div>
+    <div class="toolbar">
+      <button type="button" id="btnOpen">Open…</button>
+      <button type="button" id="btnNew">New…</button>
+      <button type="button" id="btnReload">Reload</button>
+      <button type="button" class="primary" id="btnUse">Use this dictionary next time</button>
+    </div>
+    <div id="banners"></div>
+  </header>
+  <main>
+    <section>
+      <h2>Names</h2>
+      <div class="search">
+        <label for="filter">Search</label>
+        <input id="filter" type="text" placeholder="Name or abbreviation" autocomplete="off">
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="abbr">Abbreviation</th>
+            <th data-sort="name">Name</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="hint" id="count"></p>
+    </section>
+    <section>
+      <h2 id="formTitle">Add entry</h2>
+      <label for="name">Full name(s)</label>
+      <input id="name" type="text" autocomplete="off">
+      <p class="hint">Separate people with commas, for example Chris Tomlin, Ed Cash, Matt Redman.</p>
+      <label for="abbr">Abbreviation</label>
+      <input id="abbr" type="text" autocomplete="off">
+      <div class="chips" id="suggestions"></div>
+      <div class="similar" id="similar"></div>
+      <div class="row">
+        <button type="button" class="primary" id="btnSave">Save entry</button>
+        <button type="button" id="btnClear">Clear</button>
+        <button type="button" class="danger" id="btnDelete" hidden>Delete</button>
+      </div>
+      <div id="formMsg"></div>
+      <p class="hint">Changing or deleting an abbreviation does not rename existing PDF files.</p>
+    </section>
+  </main>
+  <dialog id="pathDialog">
+    <form method="dialog" style="padding:1rem;min-width:min(28rem,90vw)">
+      <p id="pathDialogTitle">Dictionary path</p>
+      <input id="pathInput" type="text" style="width:100%">
+      <div class="row">
+        <button value="cancel">Cancel</button>
+        <button class="primary" value="ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+<script>
+(() => {
+  const token = new URLSearchParams(location.search).get("token") || "";
+  const headers = { "Content-Type": "application/json", "X-FN2FM-Token": token };
+  let entries = [];
+  let sortKey = "abbr";
+  let sortDir = 1;
+  let editing = null;
+  let suggestTimer = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  async function api(path, opts = {}) {
+    const url = path + (path.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
+    const res = await fetch(url, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+    if (res.status === 401) throw new Error("Unauthorized — open the URL from the terminal.");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  function showBanners(state) {
+    const el = $("banners");
+    el.innerHTML = "";
+    if (state.stale) {
+      el.appendChild(banner("warn", "This file has changed on disk. Reload before saving."));
+    }
+    if (state.usingSaved) {
+      el.appendChild(banner("ok", "fn2fm will use this dictionary for PDF runs on this computer."));
+    }
+    (state.conflicts || []).forEach((p) => {
+      el.appendChild(banner("warn", "Possible conflicted copy found: " + p));
+    });
+    (state.warnings || []).forEach((w) => el.appendChild(banner("warn", w)));
+  }
+
+  function banner(kind, text) {
+    const d = document.createElement("div");
+    d.className = "banner " + kind;
+    d.textContent = text;
+    return d;
+  }
+
+  function formMsg(kind, text) {
+    const el = $("formMsg");
+    el.innerHTML = "";
+    if (text) el.appendChild(banner(kind, text));
+  }
+
+  function renderRows() {
+    const q = $("filter").value.trim().toLowerCase();
+    let list = entries.slice();
+    if (q) {
+      list = list.filter((e) =>
+        e.Abbreviation.toLowerCase().includes(q) || e.Name.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      const av = (sortKey === "abbr" ? a.Abbreviation : a.Name).toLowerCase();
+      const bv = (sortKey === "abbr" ? b.Abbreviation : b.Name).toLowerCase();
+      if (av < bv) return -sortDir;
+      if (av > bv) return sortDir;
+      return 0;
+    });
+    const body = $("rows");
+    body.innerHTML = "";
+    list.forEach((e) => {
+      const tr = document.createElement("tr");
+      if (editing === e.Abbreviation) tr.className = "selected";
+      tr.innerHTML = "<td><code></code></td><td></td>";
+      tr.children[0].children[0].textContent = e.Abbreviation;
+      tr.children[1].textContent = e.Name;
+      tr.addEventListener("click", () => selectEntry(e));
+      body.appendChild(tr);
+    });
+    $("count").textContent = list.length + " of " + entries.length + " entries";
+  }
+
+  function selectEntry(e) {
+    editing = e.Abbreviation;
+    $("formTitle").textContent = "Edit entry";
+    $("name").value = e.Name;
+    $("abbr").value = e.Abbreviation;
+    $("btnDelete").hidden = false;
+    formMsg("", "");
+    $("suggestions").innerHTML = "";
+    $("similar").textContent = "";
+    renderRows();
+  }
+
+  function clearForm() {
+    editing = null;
+    $("formTitle").textContent = "Add entry";
+    $("name").value = "";
+    $("abbr").value = "";
+    $("btnDelete").hidden = true;
+    $("suggestions").innerHTML = "";
+    $("similar").textContent = "";
+    formMsg("", "");
+    renderRows();
+  }
+
+  async function refresh() {
+    const state = await api("/api/state");
+    $("path").textContent = state.path;
+    entries = state.entries || [];
+    showBanners(state);
+    renderRows();
+  }
+
+  async function requestSuggest() {
+    const name = $("name").value;
+    if (!name.trim()) {
+      $("suggestions").innerHTML = "";
+      $("similar").textContent = "";
+      return;
+    }
+    const data = await api("/api/suggest", {
+      method: "POST",
+      body: JSON.stringify({ name, excludeAbbr: editing || "" }),
+    });
+    const box = $("suggestions");
+    box.innerHTML = "";
+    const opts = [];
+    if (data.suggestion && data.suggestion.Primary) opts.push(data.suggestion.Primary);
+    (data.suggestion.Alternatives || []).forEach((a) => opts.push(a));
+    opts.forEach((a) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = a;
+      chip.addEventListener("click", () => { $("abbr").value = a; });
+      box.appendChild(chip);
+    });
+    if (!editing && !$("abbr").value && data.suggestion.Primary) {
+      $("abbr").value = data.suggestion.Primary;
+    }
+    if (data.similar && data.similar.length) {
+      $("similar").textContent = "Similar existing: " +
+        data.similar.map((e) => e.Abbreviation + " = " + e.Name).join("; ");
+    } else {
+      $("similar").textContent = "";
+    }
+  }
+
+  $("name").addEventListener("input", () => {
+    clearTimeout(suggestTimer);
+    suggestTimer = setTimeout(() => { requestSuggest().catch((e) => formMsg("err", e.message)); }, 200);
+  });
+
+  $("filter").addEventListener("input", renderRows);
+  document.querySelectorAll("th[data-sort]").forEach((th) => {
+    th.addEventListener("click", () => {
+      const key = th.getAttribute("data-sort");
+      if (sortKey === key) sortDir *= -1;
+      else { sortKey = key; sortDir = 1; }
+      renderRows();
+    });
+  });
+
+  $("btnClear").addEventListener("click", clearForm);
+
+  $("btnSave").addEventListener("click", async () => {
+    formMsg("", "");
+    const payload = {
+      action: editing ? "update" : "add",
+      oldAbbr: editing || "",
+      abbr: $("abbr").value,
+      name: $("name").value,
+    };
+    try {
+      const data = await api("/api/save", { method: "POST", body: JSON.stringify(payload) });
+      if (data.stale) {
+        formMsg("warn", data.error || "File changed on disk. Reload before saving.");
+        return;
+      }
+      if (!data.ok) {
+        formMsg("err", data.error || "Save failed");
+        return;
+      }
+      formMsg("ok", data.message || "Saved.");
+      editing = null;
+      await refresh();
+      clearForm();
+      formMsg("ok", data.message || "Saved.");
+    } catch (e) {
+      formMsg("err", e.message);
+    }
+  });
+
+  $("btnDelete").addEventListener("click", async () => {
+    if (!editing) return;
+    if (!confirm("Delete abbreviation “" + editing + "”? Existing PDF filenames are not renamed.")) return;
+    try {
+      const data = await api("/api/save", {
+        method: "POST",
+        body: JSON.stringify({ action: "delete", oldAbbr: editing }),
+      });
+      if (data.stale) {
+        formMsg("warn", data.error || "File changed on disk.");
+        return;
+      }
+      if (!data.ok) {
+        formMsg("err", data.error || "Delete failed");
+        return;
+      }
+      await refresh();
+      clearForm();
+      formMsg("ok", data.message || "Deleted.");
+    } catch (e) {
+      formMsg("err", e.message);
+    }
+  });
+
+  $("btnReload").addEventListener("click", async () => {
+    try {
+      const data = await api("/api/reload", { method: "POST", body: "{}" });
+      if (!data.ok) throw new Error(data.error || "Reload failed");
+      await refresh();
+      formMsg("ok", "Reloaded from disk.");
+    } catch (e) {
+      formMsg("err", e.message);
+    }
+  });
+
+  $("btnUse").addEventListener("click", async () => {
+    try {
+      const data = await api("/api/use", { method: "POST", body: "{}" });
+      if (!data.ok) throw new Error(data.error || "Could not save preference");
+      await refresh();
+      formMsg("ok", "Saved as the default dictionary for this computer.");
+    } catch (e) {
+      formMsg("err", e.message);
+    }
+  });
+
+  async function askPath(title, initial) {
+    $("pathDialogTitle").textContent = title;
+    $("pathInput").value = initial || "";
+    const dlg = $("pathDialog");
+    dlg.showModal();
+    return new Promise((resolve) => {
+      dlg.addEventListener("close", function handler() {
+        dlg.removeEventListener("close", handler);
+        resolve(dlg.returnValue === "ok" ? $("pathInput").value.trim() : "");
+      });
+    });
+  }
+
+  async function openPath(path) {
+    const data = await api("/api/open", { method: "POST", body: JSON.stringify({ path }) });
+    if (!data.ok) throw new Error(data.error || "Open failed");
+    clearForm();
+    await refresh();
+  }
+
+  async function newPath(path) {
+    const data = await api("/api/new", { method: "POST", body: JSON.stringify({ path }) });
+    if (!data.ok) throw new Error(data.error || "Create failed");
+    clearForm();
+    await refresh();
+  }
+
+  $("btnOpen").addEventListener("click", async () => {
+    try {
+      const picked = await api("/api/pick-open", { method: "POST", body: "{}" });
+      let path = picked.path;
+      if (picked.cancelled) return;
+      if (!picked.ok || picked.needTypedPath || !path) {
+        path = await askPath("Type the full path of the dictionary to open", $("path").textContent);
+        if (!path) return;
+      }
+      await openPath(path);
+      formMsg("ok", "Opened dictionary.");
+    } catch (e) {
+      formMsg("err", e.message);
+    }
+  });
+
+  $("btnNew").addEventListener("click", async () => {
+    try {
+      const picked = await api("/api/pick-new", { method: "POST", body: "{}" });
+      let path = picked.path;
+      if (picked.cancelled) return;
+      if (!picked.ok || picked.needTypedPath || !path) {
+        path = await askPath("Type the full path for a new dictionary", "");
+        if (!path) return;
+      }
+      await newPath(path);
+      formMsg("ok", "Created dictionary.");
+    } catch (e) {
+      formMsg("err", e.message);
+    }
+  });
+
+  refresh().catch((e) => {
+    $("path").textContent = e.message;
+  });
+})();
+</script>
+</body>
+</html>

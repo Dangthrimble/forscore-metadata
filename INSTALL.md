@@ -109,12 +109,27 @@ jobs use Ubuntu 24.04; they do not establish compatibility with every distributi
 
 ## Keep your dictionary separate
 
-fn2fm reads `names.json` from the folder where you run the command, not from the
-executable's folder. Keep your personal dictionary alongside the scores.
+By default, fn2fm reads `names.json` from the folder where you run the command,
+not from the executable's folder. Keep your personal dictionary alongside the
+scores, or point fn2fm at a shared copy (see below).
 
 The package includes `names.example.json`. Only if you do not already have a
 dictionary, copy that file into your scores folder and name the copy `names.json`.
 Never replace a customised `names.json` with the example during an update.
+
+### Dictionary editor and shared folders
+
+Run `fn2fm names` (or `fn2fm names /path/to/names.json`) to edit the dictionary
+in a local browser window. Use **Use this dictionary next time** so later
+`fn2fm` PDF runs load that same file. For one-off overrides, pass
+`--names /path/to/names.json` when processing scores.
+
+To share maintenance among a few people, put `names.json` in a Box, Dropbox or
+OneDrive folder each person syncs. Point every installation at that file once.
+Edit one at a time; if the editor reports that the file changed on disk, reload
+before saving. A previous copy is kept as `names.json.bak` beside the
+dictionary. If the sync client creates a conflicted-copy file, resolve it by
+hand—fn2fm does not merge those files.
 
 ## Check the download
 
@@ -149,8 +164,10 @@ signature.
    not undo PDF edits; retain your PDFs and their `.pdf_original` backups.
 
 The current application updates each PDF in place after validation and preserves
-its first `.pdf_original` backup. A fixed output folder, shared dictionaries,
-dedicated installers, automatic updates, signing and notarisation remain future
-development options. See README for supported filenames and PDF limitations.
+its first `.pdf_original` backup. Shared dictionary maintenance via a
+cloud-synchronised `names.json` and the built-in `fn2fm names` editor is
+supported; a fixed output folder, dedicated installers, automatic updates,
+signing and notarisation remain future development options. See README for
+supported filenames and PDF limitations.
 fn2fm uses the MIT licence in `LICENSE`; dependencies retain their own licences,
 included with the package.
