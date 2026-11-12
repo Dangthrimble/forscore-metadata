@@ -40,7 +40,7 @@ Go is the programming toolkit used to download and install this command-line pro
 In Terminal, run:
 
 ```bash
-go install github.com/Dangthrimble/fn2fm/cmd/fn2fm@latest
+go install github.com/Dangthrimble/forscore-metadata/cmd/fn2fm@latest
 ```
 
 ## Check that it worked
@@ -104,8 +104,8 @@ update the command-line program.
 - **First time:** download a full copy of the project. In Terminal:
 
   ```bash
-  git clone https://github.com/Dangthrimble/fn2fm.git
-  cd fn2fm
+  git clone https://github.com/Dangthrimble/forscore-metadata.git
+  cd forscore-metadata
   ```
 
   This creates a folder named `fn2fm` with the project files inside.
@@ -113,7 +113,7 @@ update the command-line program.
 - **Later:** get the latest project files:
 
   ```bash
-  cd fn2fm
+  cd forscore-metadata
   git pull
   ```
 

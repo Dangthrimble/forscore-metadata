@@ -464,7 +464,7 @@ form dictionaries prompted the separate preservation experiment below.
   from converting fixture line endings and invalidating PDF byte offsets.
   Personal PDFs, working dictionary, installed executable, baseline snapshots and
   local investigation/build artifacts were excluded from the commit and push.
-- GitHub Actions [run 35550647408](https://github.com/Dangthrimble/fn2fm/actions/runs/35550647408)
+- GitHub Actions [run 35550647408](https://github.com/Dangthrimble/forscore-metadata/actions/runs/35550647408)
   completed successfully on Windows Server 2025 x64 using Go 1.25.0. All tests,
   vet, standalone executable build and executable-level checks passed. The log
   confirms the Windows open-file/replacement/retry case ran and passed, rather
@@ -505,7 +505,7 @@ form dictionaries prompted the separate preservation experiment below.
   with the expected version; independent checks verified its ZIP/content hashes,
   executable permission and absence of a packaged working `names.json`.
 - Committed and pushed the packaging implementation as `866c1d7`. GitHub Actions
-  [run 35565795539](https://github.com/Dangthrimble/fn2fm/actions/runs/35565795539)
+  [run 35565795539](https://github.com/Dangthrimble/forscore-metadata/actions/runs/35565795539)
   completed successfully for all three native platforms using Go 1.25.0. Tests,
   vet, executable-level checks, packaging and artifact uploads passed. The
   published development version is `dev-1-866c1d767085`.
@@ -571,7 +571,7 @@ packaging, licensing and update review; it was not adopted.
   cross-compilation alone was not treated as proof of runtime compatibility.
 - GitHub authentication and a push subsequently succeeded. Earlier plugin
   connection trouble added no product requirements and is not a continuing blocker.
-- Repository: https://github.com/Dangthrimble/fn2fm. The recorded development
+- Repository: https://github.com/Dangthrimble/forscore-metadata. The recorded development
   branch at the earlier handover was `improve-cross-platform`.
 
 ## Empty keys and notes separation (25 September 2026)
@@ -637,7 +637,7 @@ packaging, licensing and update review; it was not adopted.
 
 - With the maintainer's approval, pushed commit `604ad4603e4c47eb21cfe5449a00d731b4db0312`
   on `improve-cross-platform`. GitHub Actions
-  [run 36320976042](https://github.com/Dangthrimble/fn2fm/actions/runs/36320976042)
+  [run 36320976042](https://github.com/Dangthrimble/forscore-metadata/actions/runs/36320976042)
   completed successfully for macOS Intel/Apple Silicon, Windows x64/ARM64 and
   Linux x64/ARM64, using native Go 1.25.0 toolchains on all six runners.
 - Every job passed the native-target check, tests, vet, executable build,

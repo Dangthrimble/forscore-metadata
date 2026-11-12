@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dangthrimble/fn2fm/internal/names"
-	"github.com/Dangthrimble/fn2fm/internal/pdfmeta"
+	"github.com/Dangthrimble/forscore-metadata/internal/names"
+	"github.com/Dangthrimble/forscore-metadata/internal/pdfmeta"
 )
 
 // CI supplies the absolute path of a separately built app. Ordinary unit tests

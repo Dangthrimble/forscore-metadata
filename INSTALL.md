@@ -7,8 +7,8 @@ are not code-signed or notarised; checksums check integrity only.
 ## Choose and download a package
 
 Prefer a numbered release from the repository's
-[Releases page](https://github.com/Dangthrimble/fn2fm/releases)
-(for example [v0.1.1](https://github.com/Dangthrimble/fn2fm/releases/tag/v0.1.1)).
+[Releases page](https://github.com/Dangthrimble/forscore-metadata/releases)
+(for example [v0.1.1](https://github.com/Dangthrimble/forscore-metadata/releases/tag/v0.1.1)).
 Download the Asset for your computer:
 
 - `macos-intel`: a Mac with an Intel processor.
@@ -22,7 +22,7 @@ Release packages are named `fn2fm-v0.1.1-<platform>.zip` (and similarly for late
 versions). Use `fn2fm --version` to confirm the stamp matches `VERSION.txt`.
 
 For interim testing only, successful **Build and test** runs on the
-[Actions page](https://github.com/Dangthrimble/fn2fm/actions) still publish
+[Actions page](https://github.com/Dangthrimble/forscore-metadata/actions) still publish
 development packages named `fn2fm-dev-<run>-<commit>-<platform>.zip`. Those
 downloads require signing in and are kept for 30 days. See
 [GitHub's download instructions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).

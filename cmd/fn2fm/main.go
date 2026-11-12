@@ -21,10 +21,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Dangthrimble/fn2fm/internal/filename"
-	"github.com/Dangthrimble/fn2fm/internal/names"
-	"github.com/Dangthrimble/fn2fm/internal/namesedit"
-	"github.com/Dangthrimble/fn2fm/internal/pdfmeta"
+	"github.com/Dangthrimble/forscore-metadata/internal/filename"
+	"github.com/Dangthrimble/forscore-metadata/internal/names"
+	"github.com/Dangthrimble/forscore-metadata/internal/namesedit"
+	"github.com/Dangthrimble/forscore-metadata/internal/pdfmeta"
 )
 
 // Set by the build workflow; source builds retain the development label.

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Dangthrimble/fn2fm/internal/names"
+	"github.com/Dangthrimble/forscore-metadata/internal/names"
 )
 
 type server struct {

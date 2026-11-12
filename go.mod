@@ -1,4 +1,4 @@
-module github.com/Dangthrimble/fn2fm
+module github.com/Dangthrimble/forscore-metadata
 
 go 1.25.0
 
