@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"fn2fm/internal/names"
+	"github.com/Dangthrimble/fn2fm/internal/names"
 )
 
 type server struct {

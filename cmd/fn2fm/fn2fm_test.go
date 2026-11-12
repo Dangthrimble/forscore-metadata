@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"fn2fm/internal/names"
+	"github.com/Dangthrimble/fn2fm/internal/names"
 )
 
 // cliTestEnv isolates subprocesses from any saved dictionary path on the host.

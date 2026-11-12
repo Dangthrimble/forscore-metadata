@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"fn2fm/internal/names"
-	"fn2fm/internal/pdfmeta"
+	"github.com/Dangthrimble/fn2fm/internal/names"
+	"github.com/Dangthrimble/fn2fm/internal/pdfmeta"
 )
 
 // CI supplies the absolute path of a separately built app. Ordinary unit tests

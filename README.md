@@ -3,25 +3,114 @@
 See the [backlog](BACKLOG.md) for outstanding work and the
 [development history](DEVELOPMENT_HISTORY.md) for completed work and decisions.
 
-## Downloads and updates
+## Git
 
-Download numbered releases from the repository's
-[Releases page](https://github.com/Dangthrimble/fn2fm/releases)
-(start with [v0.1.1](https://github.com/Dangthrimble/fn2fm/releases/tag/v0.1.1)).
-Each release provides packages for macOS Intel and Apple Silicon, Windows x64
-and ARM64, and Linux x64 and ARM64, with an executable, instructions, checksums,
-the MIT licence and dependency notices. They contain `names.example.json`; your
-working `names.json` stays separate.
+Git is a tool that downloads and updates project files on your computer.
 
-Successful **Build and test** runs on the
-[Actions page](https://github.com/Dangthrimble/fn2fm/actions) still publish
-short-lived development packages for interim testing; those require sign-in and
-expire.
+- **Install:** get Git from [git-scm.com/downloads](https://git-scm.com/downloads) (choose the installer for your computer) and run it.
+- **Upgrade:** download a newer installer from the same page and run it again, or use your computer’s usual update method.
 
-See [installation and manual-update instructions](INSTALL.md). Use
-`fn2fm --version` to identify a build. Updates are manual; there is no graphical
-installer or automatic update service. Signing and notarisation are not included;
-checksums check integrity only.
+Open a **new** Terminal window and check:
+
+```bash
+git --version
+```
+
+## This project’s files (repository)
+
+- **First time:** download a full copy of the project. In Terminal:
+
+  ```bash
+  git clone https://github.com/Dangthrimble/fn2fm.git
+  cd fn2fm
+  ```
+
+  This creates a folder named `fn2fm` with the project files inside.
+
+- **Later:** get the latest project files:
+
+  ```bash
+  cd fn2fm
+  git pull
+  ```
+
+Updating these files does **not** by itself update the installed command. To refresh the command, follow **Update** below.
+
+## Go
+
+Go is the programming toolkit used to download and install this command-line program.
+
+- **Install:** get Go **1.25** or newer from [go.dev/dl](https://go.dev/dl/). Choose the installer for your computer, run it, and accept the defaults unless you know you need otherwise.
+- **Check:** open a **new** Terminal window and run:
+
+  ```bash
+  go version
+  ```
+
+  You should see a version of 1.25 or higher.
+
+- **Update:** later, download a newer installer from the same page and run it again (or follow that page’s update steps), then open a new Terminal and run `go version` to confirm.
+
+## Install
+
+In Terminal, run:
+
+```bash
+go install github.com/Dangthrimble/fn2fm/cmd/fn2fm@latest
+```
+
+## Check that it worked
+
+```bash
+command -v fn2fm
+```
+
+The command should print a path (often ending in `go/bin/…`).
+
+Then try:
+
+```bash
+fn2fm --version
+```
+
+If you see version text, the program is installed.
+
+## If `command -v` prints nothing (PATH)
+
+Go puts the program in a `bin` folder that your computer may not search yet.
+
+1. Show the folder:
+
+   ```bash
+   go env GOBIN
+   go env GOPATH
+   ```
+
+   Use `GOBIN` if it printed a path; otherwise use `GOPATH` plus `/bin` (example: `/Users/you/go/bin`).
+
+2. **zsh** (default on Mac) — add this line to `~/.zshrc`:
+
+   ```bash
+   export PATH="$(go env GOPATH)/bin:$PATH"
+   ```
+
+   If `go env GOBIN` printed a path, use that instead of `$(go env GOPATH)/bin`.
+
+3. Save the file. Open a **new** Terminal window (or run `source ~/.zshrc`).
+
+4. Run `command -v fn2fm` again.
+
+**bash:** put the same `export PATH=…` line in `~/.bashrc` or `~/.bash_profile`.
+
+**Windows:** add the folder from `go env GOPATH` + `\bin` (or `GOBIN`) to your user Path under Environment Variables, open a new Command Prompt, and run `where fn2fm`.
+
+## Update
+
+1. Upgrade Git if needed (see **Git**).
+2. Update Go if needed (see **Go**).
+3. If you keep a local copy of the project, run `git pull` (see **This project’s files**).
+4. Re-run the same `go install …@latest` command as in **Install**.
+5. Run `command -v fn2fm` again.
 
 ## Running fn2fm
 
@@ -58,16 +147,20 @@ may therefore continue to display older XMP values, as it did with the legacy
 ExifTool workflow. Incremental updates retain previous PDF revisions; this is
 not a method for permanently erasing old metadata.
 
-Building from source now requires Go 1.25 or newer. Use
-`go build -o dist/fn2fm ./cmd/fn2fm` on macOS or
-`go build -o dist/fn2fm.exe ./cmd/fn2fm` on Windows. The compiled app does not
-require a Go installation. Automated runtime tests have passed on Windows Server
-2025 x64; desktop PDF reader behaviour has not been manually checked on Windows.
+Automated runtime tests have passed on Windows Server 2025 x64; desktop PDF
+reader behaviour has not been manually checked on Windows.
 
 ## Automated testing
 
-Run `go test ./...` and `go vet ./...` from the repository root. Tests use generated
-PDF fixtures and temporary folders; no personal score collection is required.
+From a local checkout, run `go test ./...` and `go vet ./...` from the
+repository root. For a local binary during development:
+
+```sh
+go build -o dist/fn2fm ./cmd/fn2fm
+```
+
+On Windows use `dist/fn2fm.exe`. Tests use generated PDF fixtures and temporary
+folders; no personal score collection is required.
 
 The [build workflow](.github/workflows/build.yml) runs on pushes and pull requests
 on both macOS architectures, Windows x64/ARM64 and Linux x64/ARM64. Each job checks

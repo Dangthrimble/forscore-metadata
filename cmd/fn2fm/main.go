@@ -21,10 +21,10 @@ import (
 	"runtime"
 	"strings"
 
-	"fn2fm/internal/filename"
-	"fn2fm/internal/names"
-	"fn2fm/internal/namesedit"
-	"fn2fm/internal/pdfmeta"
+	"github.com/Dangthrimble/fn2fm/internal/filename"
+	"github.com/Dangthrimble/fn2fm/internal/names"
+	"github.com/Dangthrimble/fn2fm/internal/namesedit"
+	"github.com/Dangthrimble/fn2fm/internal/pdfmeta"
 )
 
 // Set by the build workflow; source builds retain the development label.

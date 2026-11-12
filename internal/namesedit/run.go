@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"fn2fm/internal/names"
+	"github.com/Dangthrimble/fn2fm/internal/names"
 )
 
 // Run starts the local dictionary editor. args may contain an optional path.
