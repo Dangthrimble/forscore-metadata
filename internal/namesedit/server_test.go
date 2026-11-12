@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dangthrimble/fn2fm/internal/names"
+	"github.com/Dangthrimble/forscore-metadata/internal/names"
 )
 
 func TestEditorAddAndSuggest(t *testing.T) {
