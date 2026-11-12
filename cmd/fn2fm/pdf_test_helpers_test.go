@@ -10,7 +10,7 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 
-	"fn2fm/internal/pdfmeta"
+	"github.com/Dangthrimble/fn2fm/internal/pdfmeta"
 )
 
 // Construct independent PDF objects rather than using the metadata writer to

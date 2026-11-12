@@ -1,4 +1,4 @@
-module fn2fm
+module github.com/Dangthrimble/fn2fm
 
 go 1.25.0
 
