@@ -227,6 +227,21 @@ By default, scores and bookmarks in forScore 14.0 can be tagged with the followi
 
 ## Supported Character Set
 
+### Why filenames stay restricted
+
+Score filenames have to work in three places at once: on the computer that
+runs fn2fm, in cloud storage used to share PDFs, and inside forScore (which
+uses the filename stem as the Title). Different systems ban different
+characters. fn2fm therefore keeps to printable ASCII and excludes punctuation
+that commonly breaks Windows sync or cloud uploads (`" * . / : ; < > ? \ |`),
+plus leading or trailing spaces.
+
+Accented letters and other Unicode can already appear in composer and arranger
+names via `names.json` and PDF metadata. Putting them in the filename as well
+would risk sync clashes (the same name stored in more than one Unicode form)
+and has not been re-checked against current forScore behaviour, so filenames
+remain ASCII for reliability.
+
 ### forScore title restrictions
 
 In a support reply dated 6 March 2024 (ticket #9110202429965819), forScore
