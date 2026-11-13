@@ -42,6 +42,8 @@ PDF files can also be tagged with [forScore-specific PDF metadata](https://forsc
 | keysf:N      | Key            | A whole number between -7 and 7        |
 | keymi:N      |                | 0 (major) or 1 (minor)                 |
 
+fn2fm writes PDF Subject as arrangers unless genres mode is selected. forScore still maps Subject to Genres. The default is arrangers because fn2fm was built for Cambrensis, where arrangers were relevant and genres were not: the choir uses that slot for who arranged the score. Users who want forScore's Genres field leave the field name as Genres and select genres mode, described in [Using fn2fm](usage.md#subject-arrangers-or-genres).
+
 The purpose of fn2fm is to allow a PDF filename to be constructed and tagged in such a way that, when parsed, PDF metadata can be derived and added to the file prior to it being imported into forScore. The additional benefit is that, if the file's naming convention is chosen well, it will reduce the likelihood of filename clashes (e.g. scores with the same name by different composers or arrangers; the same score in different keys) while keeping the filenames relatively short.
 
 ## Supported character set
@@ -129,7 +131,7 @@ processing the file. Basic file permissions are retained; filesystem timestamps,
 extended attributes and ACLs are not copied to the replacement.
 
 Only the PDF Info Title, Author, Subject and Keywords are updated. An absent
-composer, arranger, key or accompaniment removes the corresponding metadata
+composer, arranger or genre, key or accompaniment removes the corresponding metadata
 where applicable. Existing PDF dates, Producer and XMP are preserved. Acrobat
 may therefore continue to display older XMP values, as it did with the legacy
 ExifTool workflow. Incremental updates retain previous PDF revisions; this is

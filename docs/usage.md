@@ -24,7 +24,8 @@ Writer limits, backups, and which PDF fields are updated are described in
 The naming convention used by fn2fm has been developed to support the needs of our choir [Cambrensis](https://www.cambrensis.org.uk/), uses only [7-bit ASCII printable characters](https://www.ascii-code.com/characters/printable-characters) constrained by the characters to be avoided (see [Filenames and metadata](filename-and-metadata.md)), and supports the following metadata:
 - Score Title (the same as the PDF filename, but without the ".pdf" extension)
 - Composer(s)
-- Arranger(s) (used by repurposing "Genre(s)")
+- Arranger(s), written into PDF Subject by default (forScore calls that field Genres; Cambrensis renamed it because arrangers mattered and genres did not)
+- Genre(s), the same Subject slot when genres mode is selected
 - Initial key signature
 - Whether or not the score includes an accompaniment (this is visible in the forScore "Tag(s)")
 
@@ -35,9 +36,9 @@ The filename is constructed from two parts separated by a tilde ("~"):
 To minimise uncertainty, the filename must contain exactly one tilde. Filenames without a tilde are rejected. If there are two or more, fn2fm will not know which separates the score title from the metadata and the filename will be rejected.
 
 The score metadata is formatted as follows and, apart from the limitation of no trailing spaces in the filename, each can have leading and trailing spaces if they aid readability (we just use a single space before and after the tilde):
-- <composer(s)\>_<arranger(s)\>\[<initialKeySignature\>\]<accompanimentIndicator\>
+- <composer(s)\>_<subject slot\>\[<initialKeySignature\>\]<accompanimentIndicator\>
 
-<composer(s)\> and <arranger(s)\> are entered in abbreviated form, with the abbreviation being checked against a list of abbreviations and expanded forms maintained in `names.json` (e.g. "JoRu" for "John Rutter"; "CtEcMr" for "Chris Tomlin, Ed Cash, Matt Redman"). If there are no composers, no text is required between the tilde ("~") and the underscore ("_"). if there are no arrangers, the underscore ("_") is not required and no text is required before the open square bracket ("\["). The choice of abbreviations is up to the individual.
+<composer(s)\> and the subject slot are entered in abbreviated form. Composers are checked against `names.json` (e.g. "JoRu" for "John Rutter"; "CtEcMr" for "Chris Tomlin, Ed Cash, Matt Redman"). The subject slot is arrangers from that same file unless genres mode is on, in which case it is checked against `genres.json`. If there are no composers, no text is required between the tilde ("~") and the underscore ("_"). If the subject slot is empty, the underscore ("_") is not required and no text is required before the open square bracket ("\["). The choice of abbreviations is up to the individual.
 
 The key brackets are required, but <initialKeySignature\> may be empty. Specify the actual major or minor key where known, using `#` for sharp, `b` for flat and `m` for minor (e.g. `[C]`, `[F#]` or `[F#m]`). This allows fn2fm to write the forScore "Key" metadata.
 
@@ -46,6 +47,27 @@ If the actual key is not known, use the number of accidentals as a fallback: `[0
 Use empty brackets (`[]`) when no key can be specified, for example for an atonal score: `Atonal Score ~ JoRu[]+.pdf`. Brackets containing only spaces are also accepted. These produce no forScore key metadata; any accompaniment tag is still included. Different keys can share the same accidental count, so use the actual key where known.
 
 <accompanimentIndicator\> can be a plus ("+") for a tag that states "With Accompaniment", a hyphen/minus ("-") for a tag that states "Without Accompaniment", or left blank for no accompaniment tag.
+
+## Subject: arrangers or genres
+
+forScore reads PDF Subject as Genres. fn2fm was built for Cambrensis, where arrangers were relevant and genres were not, so an unset subject mode still writes arrangers into Subject. Rename forScore's Genres field to Arrangers when you use that default. Genres mode writes genre labels into the same PDF field and leaves the forScore name as Genres. One library uses one meaning: the filename grammar does not change.
+
+The mode in effect is the first of these that is set:
+
+1. `--subject arrangers` or `--subject genres` for this run
+2. `subject` in `fn2fm.json` in the current folder, which is how a shared scores folder pins the choice
+3. `subject` saved for this user
+4. `arrangers`
+
+```text
+fn2fm subject
+fn2fm subject genres
+fn2fm subject arrangers --library
+```
+
+`fn2fm subject` prints the effective mode and where it came from. `fn2fm subject genres` saves the user default. Adding `--library` writes only `{"subject":"..."}` to `./fn2fm.json`. An unknown value is an error.
+
+In genres mode the underscore slot is one abbreviation from `genres.json`. Several genres on one score are one entry whose value is comma-separated, for example `ChrFolk` → `Christmas, Folk`. A missing abbreviation is an error and is not filled in from `names.json`. Composers still come from `names.json`. The command prints `Genre(s):` instead of `Arranger(s):`. `genres.json` is loaded only in genres mode.
 
 ## Name dictionary
 
@@ -78,7 +100,11 @@ Launch a local editor in your default browser:
 ```text
 fn2fm names
 fn2fm names /path/to/names.json
+fn2fm genres
+fn2fm genres /path/to/genres.json
 ```
+
+`fn2fm names` edits composers and arrangers. `fn2fm genres` opens the same editor for `genres.json`.
 
 The command starts a server bound to `127.0.0.1` on a random port, prints a URL
 that includes an access token, and opens that URL. Press Ctrl+C in the terminal
@@ -122,6 +148,14 @@ A small group can keep one `names.json` in a Box, Dropbox or OneDrive folder:
 PDF processing then uses the same saved path, so the dictionary you maintain is
 the one filenames are checked against.
 
+## Genre dictionary
+
+Copy `genres.example.json` to `genres.json` when you use genres mode. The example
+includes Christmas, Classical, Folk, Gospel, Hymn, Spiritual, and a combined
+Christmas, Folk entry. Edit it with `fn2fm genres`. Path resolution matches
+names: `--genres`, then the saved genres path, then `./genres.json`. **Use this
+dictionary next time** stores that genres path and does not change subject mode.
+
 ## Examples
 
 In all these examples, the forScore Title will be the same as the filename, without the ".pdf" file extension
@@ -155,4 +189,9 @@ In all these examples, the forScore Title will be the same as the filename, with
   - Composers: Jamie Owens Collins
   - Arrangers:
   - Key:
+  - Tags: With Accompaniment
+- Carol ~ JoRu_ChrFolk[C]+.pdf (genres mode)
+  - Composers: John Rutter
+  - Genres: Christmas, Folk
+  - Key: C
   - Tags: With Accompaniment

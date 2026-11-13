@@ -167,7 +167,7 @@ jobs:
 
           ### Highlights
           - Standalone PDF metadata writer (pdfcpu); ExifTool is not required
-          - \`cmd/\` + \`internal/\` layout; starter dictionary is \`names.example.json\`
+          - \`cmd/\` + \`internal/\` layout; starter dictionaries are \`names.example.json\` and \`genres.example.json\`
           - Six-platform packages: macOS Intel/Apple Silicon, Windows x64/ARM64, Linux x64/ARM64
 
           ### Notes
@@ -177,7 +177,7 @@ jobs:
           - MIT licence; dependency notices ship in each package.
 
           ### Install
-          Download \`fn2fm-${VERSION}-<platform>.zip\` for your computer from Assets below, verify the matching \`.sha256\` file, extract, and keep your personal \`names.json\` separate from \`names.example.json\`.
+          Download \`fn2fm-${VERSION}-<platform>.zip\` for your computer from Assets below, verify the matching \`.sha256\` file, extract, and keep your personal \`names.json\` and \`genres.json\` separate from the example files.
           EOF
           sed -i 's/^          //' "$notes_file"
           gh release create "$VERSION" --title "fn2fm ${VERSION}" --notes-file "$notes_file" --target "${{ github.sha }}"

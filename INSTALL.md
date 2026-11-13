@@ -114,9 +114,12 @@ By default, fn2fm reads `names.json` from the folder where you run the command,
 not from the executable's folder. Keep your personal dictionary alongside the
 scores, or point fn2fm at a shared copy (see below).
 
-The package includes `names.example.json`. Only if you do not already have a
+The package includes `names.example.json` and `genres.example.json`. Only if you do not already have a
 dictionary, copy that file into your scores folder and name the copy `names.json`.
 Never replace a customised `names.json` with the example during an update.
+Copy `genres.example.json` to `genres.json` only when you want PDF Subject to
+mean genres. The default remains arrangers, which is what Cambrensis uses.
+See [Using fn2fm](docs/usage.md#subject-arrangers-or-genres).
 
 ### Dictionary editor and shared folders
 

@@ -1,4 +1,5 @@
-// Package names loads and maintains the composer/arranger abbreviation dictionary.
+// Package names loads abbreviation dictionaries and the per-user fn2fm config,
+// including whether PDF Subject is arrangers or genres.
 package names
 
 import (

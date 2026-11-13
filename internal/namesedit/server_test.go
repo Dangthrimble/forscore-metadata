@@ -98,3 +98,52 @@ func TestEditorStaleSave(t *testing.T) {
 		t.Fatal("stale save should not keep in-memory add")
 	}
 }
+
+func TestEditorLabels(t *testing.T) {
+	for _, tc := range []struct {
+		kind Kind
+		want string
+	}{
+		{Names, "Full name(s)"},
+		{Genres, "Separate genres with commas, for example Christmas, Folk."},
+	} {
+		t.Run(tc.kind.Command, func(t *testing.T) {
+			s := &server{dict: names.NewEmpty(filepath.Join(t.TempDir(), tc.kind.DefaultFile)), token: "t", kind: tc.kind}
+			req := httptest.NewRequest(http.MethodGet, "/?token=t", nil)
+			rec := httptest.NewRecorder()
+			s.routes().ServeHTTP(rec, req)
+			if rec.Code != 200 || !bytes.Contains(rec.Body.Bytes(), []byte(tc.want)) {
+				t.Fatalf("status %d, missing %q in %s", rec.Code, tc.want, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestGenresUseKeepsSubject(t *testing.T) {
+	t.Setenv(names.ConfigDirEnv, t.TempDir())
+	if err := names.SetUserSubject(names.SubjectArrangers); err != nil {
+		t.Fatal(err)
+	}
+	if err := names.SetNamesPath(filepath.Join(t.TempDir(), "names.json")); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "genres.json")
+	dict := names.NewEmpty(path)
+	if err := dict.Save(); err != nil {
+		t.Fatal(err)
+	}
+	s := &server{dict: dict, token: "t", kind: Genres}
+	req := httptest.NewRequest(http.MethodPost, "/api/use?token=t", nil)
+	rec := httptest.NewRecorder()
+	s.routes().ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	cfg, err := names.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Subject != names.SubjectArrangers || cfg.GenresPath != path || cfg.NamesPath == "" {
+		t.Fatalf("config = %#v", cfg)
+	}
+}

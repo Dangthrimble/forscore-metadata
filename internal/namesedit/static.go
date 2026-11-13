@@ -1,6 +1,12 @@
 package namesedit
 
-import _ "embed"
+import (
+	"html/template"
+
+	_ "embed"
+)
 
 //go:embed index.html
-var indexHTML []byte
+var indexTemplateSource string
+
+var indexTemplate = template.Must(template.New("index").Parse(indexTemplateSource))
