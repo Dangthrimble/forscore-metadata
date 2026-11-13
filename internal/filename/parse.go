@@ -8,160 +8,163 @@ import (
 )
 
 const (
-	validExt   = ".pdf"
-	mdPrefix   = "~"
-	arrPrefix  = "_"
-	keyPrefix  = "["
-	keySuffix  = "]"
-	withAcc    = "+"
-	withoutAcc = "-"
+	validExtension       = ".pdf"
+	metadataPrefix       = "~"
+	arrangersPrefix      = "_"
+	keyPrefix            = "["
+	keySuffix            = "]"
+	withAccompaniment    = "+"
+	withoutAccompaniment = "-"
 )
 
 const (
-	minPrintASCII = '\u0020'        // Minimum printable ASCII value
-	maxPrintASCII = '\u007E'        // Maximum printable ASCII value
-	charToAvoid   = "\"*./:;<>?\\|" // Characters to avoid according to cloud storage
+	minPrintASCII     = '\u0020'        // Minimum printable ASCII value
+	maxPrintASCII     = '\u007E'        // Maximum printable ASCII value
+	charactersToAvoid = "\"*./:;<>?\\|" // Characters to avoid according to cloud storage
 )
 
-func ValidateAndExtension(fnExt string) (string, error) {
+// ValidateFilenameAndExtension checks that path basenames are PDF score
+// filenames and returns the stem (filename without the .pdf extension).
+func ValidateFilenameAndExtension(pathWithExt string) (string, error) {
 
 	var (
-		ok bool
-		fn string // Song's filename without the path but including the extension
+		ok   bool
+		stem string // Song's filename without the path but including no extension
 	)
 
 	// Only the filename is required, so any path prefixing the filename needs
 	// to be removed.
-	fnExt = filepath.Base(fnExt)
+	pathWithExt = filepath.Base(pathWithExt)
 
 	// If the file doesn't end with validExtension, it is not a suitable file.
-	fn, ok = strings.CutSuffix(fnExt, validExt)
+	stem, ok = strings.CutSuffix(pathWithExt, validExtension)
 	if !ok {
-		return "", fmt.Errorf("%q is not a PDF file", fnExt)
+		return "", fmt.Errorf("%q is not a PDF file", pathWithExt)
 	}
 
 	// If the filename has leading or trailing spaces, it may not be supported
 	// by cloud storage.
-	if fn != strings.Trim(fn, " ") {
-		return "", fmt.Errorf("%q has leading or trailing spaces", fn)
+	if stem != strings.Trim(stem, " ") {
+		return "", fmt.Errorf("%q has leading or trailing spaces", stem)
 	}
 
 	// If the filename doesn't have a single instance of metadataPrefix, the
 	// metadata cannot be reliably parsed.
-	if strings.Count(fn, mdPrefix) != 1 {
-		return "", fmt.Errorf("%q must have a single %q in the filename to allow metadata to be parsed", fnExt, mdPrefix)
+	if strings.Count(stem, metadataPrefix) != 1 {
+		return "", fmt.Errorf("%q must have a single %q in the filename to allow metadata to be parsed", pathWithExt, metadataPrefix)
 	}
 
 	// To avoid any complications with internationalisation, ensure the filename
 	// is composed of 7-bit ASCII printable characters, excluding
 	// charactersToAvoid.
-	for i, w := 0, 0; i < len(fn); i += w {
-		rune, width := utf8.DecodeRuneInString(fn[i:])
+	for i, w := 0, 0; i < len(stem); i += w {
+		rune, width := utf8.DecodeRuneInString(stem[i:])
 		if (rune < minPrintASCII) || (rune > maxPrintASCII) {
-			return "", fmt.Errorf("%q is not a valid character in %q", rune, fn)
+			return "", fmt.Errorf("%q is not a valid character in %q", rune, stem)
 		}
-		if strings.Contains(charToAvoid, string(rune)) {
-			return "", fmt.Errorf("%q is not a valid character in %q", rune, fn)
+		if strings.Contains(charactersToAvoid, string(rune)) {
+			return "", fmt.Errorf("%q is not a valid character in %q", rune, stem)
 		}
 		w = width
 	}
 
-	return fn, nil
+	return stem, nil
 }
 
-func ValidateMetadataTags(fn string) (string, error) {
+func ValidateMetadataTags(stem string) (string, error) {
 
-	var md string // Song's metadata embedded in the filename
+	var metadata string // Song's metadata embedded in the filename
 
 	// The metadata needs to be isolated to ensure it contains the correct
 	// quantity of each tag.
-	splitFn := strings.Split(fn, mdPrefix)
-	md = strings.Trim(splitFn[1], " ")
+	splitStem := strings.Split(stem, metadataPrefix)
+	metadata = strings.Trim(splitStem[1], " ")
 
 	// The metadata cannot be parsed if it contains the incorrect quantity of
 	// each tag.
-	if strings.Count(md, arrPrefix) > 1 ||
-		strings.Count(md, keyPrefix) != 1 ||
-		strings.Count(md, keySuffix) != 1 {
+	if strings.Count(metadata, arrangersPrefix) > 1 ||
+		strings.Count(metadata, keyPrefix) != 1 ||
+		strings.Count(metadata, keySuffix) != 1 {
 		return "", fmt.Errorf("wrong number of metadata tags")
 	}
 
 	// The tag locations are required to determine whether any
 	// arrangers are included and to ensure the tags are in the correct order.
-	arrLoc := strings.Index(md, arrPrefix)
-	keyLoc := strings.Index(md, keyPrefix)
-	accLoc := strings.Index(md, keySuffix)
+	arrangersLoc := strings.Index(metadata, arrangersPrefix)
+	keyLoc := strings.Index(metadata, keyPrefix)
+	keyEndLoc := strings.Index(metadata, keySuffix)
 
-	// If arrPrefix is after keyPrefix, or keyPrefix is after keySuffix, the
-	// metadata cannot be parsed.
-	if (arrLoc > keyLoc) || (keyLoc > accLoc) {
+	// If arrangersPrefix is after keyPrefix, or keyPrefix is after keySuffix, the
+	// metadata cannot be parsed. An absent arrangersPrefix is -1 and sorts before
+	// keyPrefix.
+	if (arrangersLoc > keyLoc) || (keyLoc > keyEndLoc) {
 		return "", fmt.Errorf("metadata tags in wrong order")
 	}
 
-	return md, nil
+	return metadata, nil
 }
 
-func ParseComposers(md string, ca map[string]string) (string, error) {
+func ParseComposers(metadata string, abbreviations map[string]string) (string, error) {
 
-	var splitMd []string // Metadata split into slices
+	var splitMetadata []string // Metadata split into slices
 
 	// Need to isolate the Composers' metadata to use as a key for composers.
-	if strings.Contains(md, arrPrefix) {
+	if strings.Contains(metadata, arrangersPrefix) {
 		// The Composers' metadata is before the arrangersPrefix.
-		splitMd = strings.Split(md, arrPrefix)
+		splitMetadata = strings.Split(metadata, arrangersPrefix)
 	} else {
 		// The Composers' metadata is before the keyPrefix.
-		splitMd = strings.Split(md, keyPrefix)
+		splitMetadata = strings.Split(metadata, keyPrefix)
 	}
 
-	return findComposersOrArrangers(splitMd[0], ca)
+	return lookupAbbreviation(splitMetadata[0], abbreviations)
 }
 
-func ParseArrangers(md string, ca map[string]string) (string, error) {
+func ParseArrangers(metadata string, abbreviations map[string]string) (string, error) {
 
 	var (
-		splitMd []string // Metadata split into slices
+		splitMetadata []string // Metadata split into slices
 	)
 	// There can be no arrangers if the arrangersPrefix is not present.
-	if !strings.Contains(md, arrPrefix) {
+	if !strings.Contains(metadata, arrangersPrefix) {
 		return "", nil
 	}
 
 	// Need to isolate the Arrangers' metadata to use as a key for arrangers.
 	// The Arrangers' metadata is after the arrangersPrefix ...
-	splitMd = strings.Split(md, arrPrefix)
+	splitMetadata = strings.Split(metadata, arrangersPrefix)
 	// ... and before the keyPrefix
-	splitMd = strings.Split(splitMd[1], keyPrefix)
+	splitMetadata = strings.Split(splitMetadata[1], keyPrefix)
 
-	return findComposersOrArrangers(splitMd[0], ca)
+	return lookupAbbreviation(splitMetadata[0], abbreviations)
 }
 
-func findComposersOrArrangers(key string, ca map[string]string) (string, error) {
+func lookupAbbreviation(abbreviation string, abbreviations map[string]string) (string, error) {
 
 	var (
-		ok    bool
-		names string // Name(s) of composer(s) or arranger(s)
+		ok   bool
+		name string // Name(s) of composer(s) or arranger(s)
 	)
 
-	key = strings.Trim(key, " ")
-	if len(key) == 0 {
+	abbreviation = strings.Trim(abbreviation, " ")
+	if len(abbreviation) == 0 {
 		return "", nil
 	}
 
-	names, ok = ca[key]
+	name, ok = abbreviations[abbreviation]
 	if !ok {
-		return "", fmt.Errorf("%q not found", key)
+		return "", fmt.Errorf("%q not found", abbreviation)
 	}
 
-	return strings.TrimSpace(names), nil
+	return strings.TrimSpace(name), nil
 }
 
-func ParseKey(md string) (string, error) {
+func ParseKey(metadata string) (string, error) {
 
 	var (
-		ok      bool
-		splitMd []string // Metadata split into slices
-		key     string   // Song's initial key signature
+		ok            bool
+		splitMetadata []string // Metadata split into slices
+		key           string   // Song's initial key signature
 	)
 
 	keys := map[string]string{
@@ -215,10 +218,10 @@ func ParseKey(md string) (string, error) {
 
 	// Need to isolate the Initial Key Signature's metadata to use as the key
 	// for keys. The Initial Key Signature's metadata is after the keyPrefix ...
-	splitMd = strings.Split(md, keyPrefix)
+	splitMetadata = strings.Split(metadata, keyPrefix)
 	// ... and before the keySuffix.
-	splitMd = strings.Split(splitMd[1], keySuffix)
-	raw := strings.Trim(splitMd[0], " ")
+	splitMetadata = strings.Split(splitMetadata[1], keySuffix)
+	raw := strings.Trim(splitMetadata[0], " ")
 	key, ok = keys[raw]
 	if !ok {
 		return "", fmt.Errorf("%q is not a valid key signature", raw)
@@ -227,24 +230,24 @@ func ParseKey(md string) (string, error) {
 	return key, nil
 }
 
-func ParseAccompaniment(md string) (string, error) {
+func ParseAccompaniment(metadata string) (string, error) {
 
 	var (
-		splitMd []string // Metadata split into slices
-		accMd   string   // Metadata indicating whether or not the song has an accompaniment
+		splitMetadata []string // Metadata split into slices
+		accMetadata   string   // Metadata indicating whether or not the song has an accompaniment
 	)
 
 	// The Accompaniment's metadata is a single character after the keySuffix.
-	splitMd = strings.Split(md, keySuffix)
-	accMd = strings.Trim(splitMd[1], " ")
-	switch accMd {
-	case "+":
+	splitMetadata = strings.Split(metadata, keySuffix)
+	accMetadata = strings.Trim(splitMetadata[1], " ")
+	switch accMetadata {
+	case withAccompaniment:
 		return "With Accompaniment", nil
-	case "-":
+	case withoutAccompaniment:
 		return "Without Accompaniment", nil
 	case "":
 		return "", nil
 	default:
-		return "", fmt.Errorf("%q is not valid for accompaniment", accMd)
+		return "", fmt.Errorf("%q is not valid for accompaniment", accMetadata)
 	}
 }

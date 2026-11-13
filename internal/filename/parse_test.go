@@ -9,7 +9,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("valid filename with path", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("! Cambrensis Choir Sheet Music/O Magnum Mysterium ~ MoLa[2#].pdf")
+		got, err := ValidateFilenameAndExtension("! Cambrensis Choir Sheet Music/O Magnum Mysterium ~ MoLa[2#].pdf")
 		want := "O Magnum Mysterium ~ MoLa[2#]"
 
 		if got != want || err != nil {
@@ -19,7 +19,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("valid filename without path", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("O Magnum Mysterium ~ MoLa[2#].pdf")
+		got, err := ValidateFilenameAndExtension("O Magnum Mysterium ~ MoLa[2#].pdf")
 		want := "O Magnum Mysterium ~ MoLa[2#]"
 
 		if got != want || err != nil {
@@ -29,7 +29,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("wrong filename extension", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("O Magnum Mysterium ~ MoLa[2#].docx")
+		got, err := ValidateFilenameAndExtension("O Magnum Mysterium ~ MoLa[2#].docx")
 		want := ""
 
 		if got != want || err == nil {
@@ -39,7 +39,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("filename contains leading or trailing spaces", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("O Magnum Mysterium ~ MoLa[2#] .pdf")
+		got, err := ValidateFilenameAndExtension("O Magnum Mysterium ~ MoLa[2#] .pdf")
 		want := ""
 
 		if got != want || err == nil {
@@ -49,7 +49,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("filename contains wrong number of metadataPrefix", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("O Magnum Mysterium.pdf")
+		got, err := ValidateFilenameAndExtension("O Magnum Mysterium.pdf")
 		want := ""
 
 		if got != want || err == nil {
@@ -59,7 +59,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("filename contains characters other than 7-bit ASCII printable characters", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("Ö Magnum Mysterium ~ MoLa[2#].pdf")
+		got, err := ValidateFilenameAndExtension("Ö Magnum Mysterium ~ MoLa[2#].pdf")
 		want := ""
 
 		if got != want || err == nil {
@@ -69,7 +69,7 @@ func TestValidateFilenameAndExtension(t *testing.T) {
 
 	t.Run("filename contains 7-bit ASCII printable characters to be avoided", func(t *testing.T) {
 
-		got, err := ValidateAndExtension("O Magnum Mysterium ~ MoLa<2#>.pdf")
+		got, err := ValidateFilenameAndExtension("O Magnum Mysterium ~ MoLa<2#>.pdf")
 		want := ""
 
 		if got != want || err == nil {
@@ -299,7 +299,7 @@ func TestTildeOnlyFilenames(t *testing.T) {
 		"Score ~ Part Two ~ JoRu[C]+.pdf",
 	} {
 		t.Run(filename, func(t *testing.T) {
-			if got, err := ValidateAndExtension(filename); err == nil || got != "" {
+			if got, err := ValidateFilenameAndExtension(filename); err == nil || got != "" {
 				t.Fatalf("got (%q, %v), want rejection", got, err)
 			}
 		})
@@ -324,7 +324,7 @@ func TestRealFilenames(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.filename, func(t *testing.T) {
-			fn, err := ValidateAndExtension(tc.filename)
+			fn, err := ValidateFilenameAndExtension(tc.filename)
 			if err != nil {
 				t.Fatal(err)
 			}
