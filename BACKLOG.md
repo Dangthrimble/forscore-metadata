@@ -3,7 +3,9 @@
 Outstanding work and unresolved questions for fn2fm. Order does not imply an
 agreed priority, and suggested approaches are not settled decisions. Completed
 work and its rationale are in [DEVELOPMENT_HISTORY.md](DEVELOPMENT_HISTORY.md);
-current usage is in [README.md](README.md).
+current usage starts in [README.md](README.md), with detail in
+[docs/usage.md](docs/usage.md) and
+[docs/filename-and-metadata.md](docs/filename-and-metadata.md).
 
 ## Reliability and command-line behaviour
 
@@ -30,7 +32,8 @@ current usage is in [README.md](README.md).
 - Keep the restricted ASCII filename policy. Reconcile the exact punctuation
   set with tests before any future changes. Preserve the distinction between
   forScore's title restrictions, documented in its 6 March 2024 support reply,
-  and fn2fm's broader cloud-storage/ASCII restrictions (see the README).
+  and fn2fm's broader cloud-storage/ASCII restrictions (see
+  [docs/filename-and-metadata.md](docs/filename-and-metadata.md)).
 - Reject filenames that contain two or more consecutive spaces. forScore appears
   to compress runs of spaces to a single space when fetching the Title; fn2fm
   currently copies the filename stem into Title unchanged, so consecutive spaces
@@ -49,7 +52,7 @@ current usage is in [README.md](README.md).
   output location. Allow a destination on Box or Dropbox; choose between a locally
   synchronised folder and direct cloud access during design. Output-folder
   retention is not implemented. A saved dictionary path and `--names` override
-  are implemented; see the README.
+  are implemented; see [docs/usage.md](docs/usage.md).
 - Shared `names.json` via a cloud-synchronised folder, stale-save detection,
   `names.json.bak`, and the `fn2fm names` browser editor are implemented. Named
   profiles, layered dictionaries, CSV import/export, URL sync and automatic

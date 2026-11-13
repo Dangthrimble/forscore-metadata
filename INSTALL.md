@@ -31,8 +31,9 @@ packages.
 
 Extract the downloaded ZIP (for Actions artifacts, extract the outer artifact,
 then the versioned ZIP inside). Keep the extracted folder together: it contains
-the executable, this guide, README, `BACKLOG.md`, `DEVELOPMENT_HISTORY.md`,
-`VERSION.txt`, checksums, a starter dictionary, `LICENSE` and dependency notices.
+the executable, this guide, README, the `docs/` guides, `BACKLOG.md`,
+`DEVELOPMENT_HISTORY.md`, `VERSION.txt`, checksums, a starter dictionary,
+`LICENSE` and dependency notices.
 
 ## macOS
 
@@ -167,7 +168,9 @@ The current application updates each PDF in place after validation and preserves
 its first `.pdf_original` backup. Shared dictionary maintenance via a
 cloud-synchronised `names.json` and the built-in `fn2fm names` editor is
 supported; a fixed output folder, dedicated installers, automatic updates,
-signing and notarisation remain future development options. See README for
-supported filenames and PDF limitations.
+signing and notarisation remain future development options. See the [README](README.md)
+hub and [Filenames and metadata](docs/filename-and-metadata.md) for supported
+filenames and PDF limitations; [Using fn2fm](docs/usage.md) covers naming and
+the dictionary.
 fn2fm uses the MIT licence in `LICENSE`; dependencies retain their own licences,
 included with the package.
