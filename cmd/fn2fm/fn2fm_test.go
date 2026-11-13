@@ -137,3 +137,138 @@ func TestFN2FMEmptyKeyCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestSubjectMode(t *testing.T) {
+	namesJSON := []byte(`{"JoRu":"John Rutter","DaFo":"Dan Forrest"}`)
+	genresJSON := []byte(`{"Chr":"Christmas","DaFo":"Christmas"}`)
+
+	t.Run("default arrangers without genres.json", func(t *testing.T) {
+		dir := t.TempDir()
+		name := "Score ~ JoRu_DaFo[C].pdf"
+		path := filepath.Join(dir, name)
+		pdftest.WriteFile(t, path, pdftest.ExistingInfoPDF(false))
+		pdftest.WriteFile(t, filepath.Join(dir, "names.json"), namesJSON)
+		output, err := runCLI(t, dir, t.TempDir(), name)
+		if err != nil {
+			t.Fatalf("command failed: %v\n%s", err, output)
+		}
+		if strings.Contains(string(output), "genres.json") {
+			t.Fatalf("arrangers mode loaded genres.json:\n%s", output)
+		}
+		ctx := pdftest.ReadPDF(t, pdftest.ReadFile(t, path), pdfmeta.Configuration())
+		if ctx.Author != "John Rutter" || ctx.Subject != "Dan Forrest" {
+			t.Fatalf("author=%q subject=%q", ctx.Author, ctx.Subject)
+		}
+	})
+
+	t.Run("genres flag", func(t *testing.T) {
+		dir := t.TempDir()
+		name := "Score ~ JoRu_Chr[C]+.pdf"
+		path := filepath.Join(dir, name)
+		pdftest.WriteFile(t, path, pdftest.ExistingInfoPDF(false))
+		pdftest.WriteFile(t, filepath.Join(dir, "names.json"), namesJSON)
+		pdftest.WriteFile(t, filepath.Join(dir, "genres.json"), genresJSON)
+		output, err := runCLI(t, dir, t.TempDir(), "--subject", "genres", name)
+		if err != nil {
+			t.Fatalf("command failed: %v\n%s", err, output)
+		}
+		if !strings.Contains(string(output), `Genre(s): "Christmas"`) {
+			t.Fatalf("missing genre label:\n%s", output)
+		}
+		ctx := pdftest.ReadPDF(t, pdftest.ReadFile(t, path), pdfmeta.Configuration())
+		if ctx.Author != "John Rutter" || ctx.Subject != "Christmas" || ctx.Keywords != "keysf:0, keymi:0, With Accompaniment" {
+			t.Fatalf("author=%q subject=%q keywords=%q", ctx.Author, ctx.Subject, ctx.Keywords)
+		}
+	})
+
+	t.Run("unknown genre does not use names.json", func(t *testing.T) {
+		dir := t.TempDir()
+		name := "Score ~ JoRu_Folk[C].pdf"
+		path := filepath.Join(dir, name)
+		source := pdftest.ExistingInfoPDF(false)
+		pdftest.WriteFile(t, path, source)
+		pdftest.WriteFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":"John Rutter","Folk":"Should not be used"}`))
+		pdftest.WriteFile(t, filepath.Join(dir, "genres.json"), genresJSON)
+		output, err := runCLI(t, dir, t.TempDir(), "--subject", "genres", name)
+		if err != nil {
+			t.Fatalf("parse errors exit zero: %v\n%s", err, output)
+		}
+		if !strings.Contains(string(output), `"Folk" not found`) {
+			t.Fatalf("missing lookup error:\n%s", output)
+		}
+		if !bytes.Equal(pdftest.ReadFile(t, path), source) {
+			t.Fatal("failed genre lookup changed the PDF")
+		}
+	})
+
+	t.Run("library file overrides user config", func(t *testing.T) {
+		dir := t.TempDir()
+		cfgDir := t.TempDir()
+		name := "Score ~ JoRu_DaFo[C].pdf"
+		path := filepath.Join(dir, name)
+		pdftest.WriteFile(t, path, pdftest.ExistingInfoPDF(false))
+		pdftest.WriteFile(t, filepath.Join(dir, "names.json"), namesJSON)
+		pdftest.WriteFile(t, filepath.Join(dir, "genres.json"), genresJSON)
+		pdftest.WriteFile(t, filepath.Join(dir, "fn2fm.json"), []byte(`{"subject":"arrangers"}`))
+		pdftest.WriteFile(t, filepath.Join(cfgDir, "config.json"), []byte(`{"subject":"genres"}`))
+		output, err := runCLI(t, dir, cfgDir, name)
+		if err != nil {
+			t.Fatalf("command failed: %v\n%s", err, output)
+		}
+		ctx := pdftest.ReadPDF(t, pdftest.ReadFile(t, path), pdfmeta.Configuration())
+		if ctx.Subject != "Dan Forrest" {
+			t.Fatalf("subject=%q, want arranger from library pin", ctx.Subject)
+		}
+
+		output, err = runCLI(t, dir, cfgDir, "--subject", "genres", name)
+		if err != nil {
+			t.Fatalf("flag override failed: %v\n%s", err, output)
+		}
+		ctx = pdftest.ReadPDF(t, pdftest.ReadFile(t, path), pdfmeta.Configuration())
+		if ctx.Subject != "Christmas" {
+			t.Fatalf("subject=%q, want genre from --subject", ctx.Subject)
+		}
+	})
+
+	t.Run("subject command", func(t *testing.T) {
+		dir := t.TempDir()
+		cfgDir := t.TempDir()
+		output, err := runCLI(t, dir, cfgDir, "subject")
+		if err != nil {
+			t.Fatalf("subject: %v\n%s", err, output)
+		}
+		if !strings.Contains(string(output), "Effective subject: arrangers (default)") {
+			t.Fatalf("output: %s", output)
+		}
+		output, err = runCLI(t, dir, cfgDir, "subject", "genres")
+		if err != nil {
+			t.Fatalf("set user: %v\n%s", err, output)
+		}
+		if !strings.Contains(string(output), "Saved user subject: genres") || !strings.Contains(string(output), "Effective subject: genres (user config)") {
+			t.Fatalf("output: %s", output)
+		}
+		pdftest.WriteFile(t, filepath.Join(dir, "fn2fm.json"), []byte("{\n  \"subject\": \"arrangers\"\n}\n"))
+		output, err = runCLI(t, dir, cfgDir, "subject")
+		if err != nil {
+			t.Fatalf("effective library: %v\n%s", err, output)
+		}
+		if !strings.Contains(string(output), "Effective subject: arrangers (library ./fn2fm.json)") {
+			t.Fatalf("output: %s", output)
+		}
+		raw, err := os.ReadFile(filepath.Join(cfgDir, "config.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(raw), `"subject": "genres"`) {
+			t.Fatalf("user config: %s", raw)
+		}
+	})
+}
+
+func runCLI(t *testing.T, dir, cfgDir string, args ...string) ([]byte, error) {
+	t.Helper()
+	cmd := exec.Command(os.Args[0], append([]string{"-test.run=^TestFN2FMCLIHelper$", "--"}, args...)...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "FN2FM_TEST_MAIN=1", "PATH="+dir, names.ConfigDirEnv+"="+cfgDir)
+	return cmd.CombinedOutput()
+}

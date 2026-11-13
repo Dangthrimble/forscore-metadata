@@ -12,9 +12,10 @@ import (
 )
 
 type server struct {
-	mu   sync.Mutex
-	dict *names.Dictionary
+	mu    sync.Mutex
+	dict  *names.Dictionary
 	token string
+	kind  Kind
 }
 
 func (s *server) routes() http.Handler {
@@ -56,7 +57,9 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write(indexHTML)
+	if err := indexTemplate.Execute(w, s.kind); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 type stateResponse struct {
@@ -74,7 +77,11 @@ func (s *server) handleState(w http.ResponseWriter, r *http.Request) {
 	stale, _ := s.dict.IsStale()
 	conflicts, _ := names.ConflictedCopies(s.dict.Path)
 	cfg, _ := names.LoadConfig()
-	using := cfg != nil && cfg.NamesPath != "" && sameFilePath(cfg.NamesPath, s.dict.Path)
+	saved := ""
+	if s.kind.Configured != nil {
+		saved = s.kind.Configured(cfg)
+	}
+	using := saved != "" && sameFilePath(saved, s.dict.Path)
 	writeJSON(w, stateResponse{
 		Path:       s.dict.Path,
 		Entries:    s.dict.EntriesSorted(),
@@ -86,8 +93,8 @@ func (s *server) handleState(w http.ResponseWriter, r *http.Request) {
 }
 
 type suggestRequest struct {
-	Name         string `json:"name"`
-	ExcludeAbbr  string `json:"excludeAbbr"`
+	Name        string `json:"name"`
+	ExcludeAbbr string `json:"excludeAbbr"`
 }
 
 type suggestResponse struct {
@@ -120,10 +127,10 @@ func (s *server) handleSuggest(w http.ResponseWriter, r *http.Request) {
 }
 
 type saveRequest struct {
-	Action string `json:"action"` // add | update | delete
+	Action  string `json:"action"` // add | update | delete
 	OldAbbr string `json:"oldAbbr"`
-	Abbr   string `json:"abbr"`
-	Name   string `json:"name"`
+	Abbr    string `json:"abbr"`
+	Name    string `json:"name"`
 }
 
 type saveResponse struct {
@@ -294,7 +301,11 @@ func (s *server) handleUse(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	path := s.dict.Path
 	s.mu.Unlock()
-	if err := names.SetNamesPath(path); err != nil {
+	if s.kind.SetPath == nil {
+		writeJSON(w, map[string]any{"ok": false, "error": "dictionary kind is not configured"})
+		return
+	}
+	if err := s.kind.SetPath(path); err != nil {
 		writeJSON(w, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
@@ -306,7 +317,7 @@ func (s *server) handlePickOpen(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	path, err := pickDictionaryPath()
+	path, err := pickDictionaryPath(s.kind.ChooseTitle)
 	if err != nil {
 		writeJSON(w, map[string]any{"ok": false, "error": err.Error(), "needTypedPath": true})
 		return
@@ -323,7 +334,7 @@ func (s *server) handlePickNew(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	path, err := pickSaveDictionaryPath()
+	path, err := pickSaveDictionaryPath(s.kind.CreateTitle, s.kind.DefaultFile)
 	if err != nil {
 		writeJSON(w, map[string]any{"ok": false, "error": err.Error(), "needTypedPath": true})
 		return

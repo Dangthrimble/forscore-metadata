@@ -50,6 +50,9 @@ func TestArchivePreservesExecutableAndDictionary(t *testing.T) {
 	if _, exists := contents["names.json"]; exists {
 		t.Fatal("package could overwrite a personal dictionary")
 	}
+	if _, exists := contents["genres.json"]; exists {
+		t.Fatal("package could overwrite a personal genres dictionary")
+	}
 	manifest := string(contents["SHA256SUMS.txt"])
 	for name, data := range map[string][]byte{"fn2fm": binary, "names.example.json": dictionary} {
 		if !strings.Contains(manifest, fmt.Sprintf("%x  %s\n", sha256.Sum256(data), name)) {

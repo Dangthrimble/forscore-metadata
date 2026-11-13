@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>fn2fm names editor</title>
+  <title>{{.PageTitle}}</title>
   <style>
     :root {
       --bg: #f6f4ef;
@@ -147,7 +147,7 @@
 </head>
 <body>
   <header>
-    <h1>fn2fm dictionary</h1>
+    <h1>{{.Heading}}</h1>
     <div class="path" id="path">Loading…</div>
     <div class="toolbar">
       <button type="button" id="btnOpen">Open…</button>
@@ -159,16 +159,16 @@
   </header>
   <main>
     <section>
-      <h2>Names</h2>
+      <h2>{{.ListHeading}}</h2>
       <div class="search">
         <label for="filter">Search</label>
-        <input id="filter" type="text" placeholder="Name or abbreviation" autocomplete="off">
+        <input id="filter" type="text" placeholder="{{.SearchHint}}" autocomplete="off">
       </div>
       <table>
         <thead>
           <tr>
             <th data-sort="abbr">Abbreviation</th>
-            <th data-sort="name">Name</th>
+            <th data-sort="name">{{.ValueHeading}}</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -177,9 +177,9 @@
     </section>
     <section>
       <h2 id="formTitle">Add entry</h2>
-      <label for="name">Full name(s)</label>
+      <label for="name">{{.ValueLabel}}</label>
       <input id="name" type="text" autocomplete="off">
-      <p class="hint">Separate people with commas, for example Chris Tomlin, Ed Cash, Matt Redman.</p>
+      <p class="hint">{{.CommaHint}}</p>
       <label for="abbr">Abbreviation</label>
       <input id="abbr" type="text" autocomplete="off">
       <div class="chips" id="suggestions"></div>

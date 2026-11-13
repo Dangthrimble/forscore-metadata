@@ -1,2 +1,2 @@
-// Package namesedit provides the local browser-based names.json editor.
+// Package namesedit provides the local browser editor for names.json and genres.json.
 package namesedit

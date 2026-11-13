@@ -102,6 +102,7 @@ func packageBinary(binary, version, out string) error {
 		{"DEVELOPMENT_HISTORY.md", "DEVELOPMENT_HISTORY.md", 0644},
 		{"LICENSE", "LICENSE", 0644},
 		{"names.example.json", "names.example.json", 0644},
+		{"genres.example.json", "genres.example.json", 0644},
 	} {
 		if err := add(file.name, file.path, file.mode); err != nil {
 			return err

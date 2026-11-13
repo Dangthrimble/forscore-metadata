@@ -46,8 +46,6 @@ current usage starts in [README.md](README.md), with detail in
 
 ## Configuration and dictionaries
 
-- Add configuration for genre or arranger handling; define the supported choices
-  and metadata mapping before implementation.
 - Optionally retain configuration between invocations, including a predefined
   output location. Allow a destination on Box or Dropbox; choose between a locally
   synchronised folder and direct cloud access during design. Output-folder

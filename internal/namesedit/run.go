@@ -15,15 +15,15 @@ import (
 )
 
 // Run starts the local dictionary editor. args may contain an optional path.
-func Run(args []string) error {
+func Run(kind Kind, args []string) error {
 	var flagPath string
 	if len(args) > 1 {
-		return fmt.Errorf("usage: fn2fm names [path]")
+		return fmt.Errorf("usage: %s", kind.Usage)
 	}
 	if len(args) == 1 {
 		flagPath = args[0]
 	}
-	path, err := names.ResolvePath(flagPath)
+	path, err := kind.Resolve(flagPath)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	fromConfig := strings.TrimSpace(flagPath) == "" && cfg.NamesPath != ""
+	fromConfig := strings.TrimSpace(flagPath) == "" && kind.Configured(cfg) != ""
 
 	var dict *names.Dictionary
 	if _, err := os.Stat(path); err != nil {
@@ -53,7 +53,7 @@ func Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	srv := &server{dict: dict, token: token}
+	srv := &server{dict: dict, token: token, kind: kind}
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

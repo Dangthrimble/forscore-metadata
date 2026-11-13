@@ -1,7 +1,8 @@
 # fn2fm - Filename to forScore Metadata
 
 fn2fm turns a carefully named score PDF into forScore-ready PDF metadata
-(title, composers, arrangers, key, and accompaniment tags).
+(title, composers, arrangers or genres, key, and accompaniment tags).
+Arrangers are the default.
 
 If you only want the command-line program, you do **not** need to download this
 project’s files. Choose an install path below; `go install …@latest` fetches
@@ -31,7 +32,7 @@ Full naming rules, the dictionary editor, and more examples are in
 
 ## Docs
 
-- [Using fn2fm](docs/usage.md) — run the command, score naming, `names.json`, examples
+- [Using fn2fm](docs/usage.md) — run the command, score naming, arrangers or genres, `names.json`, examples
 - [Filenames and metadata](docs/filename-and-metadata.md) — character limits, forScore/PDF metadata, how PDFs are updated
 - [Install with Go](docs/install-go.md) — Git, Go, `go install`, PATH, update, optional clone
 - [INSTALL.md](INSTALL.md) — install from a release ZIP (no Go required)

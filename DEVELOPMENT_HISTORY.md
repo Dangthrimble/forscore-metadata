@@ -20,6 +20,11 @@ The [README](README.md) describes current behaviour.
   personal dictionaries are not replaced. Dictionary editing uses `fn2fm names`
   (local browser UI) with atomic save, `names.json.bak`, and stale-file detection
   for cloud-synchronised shared copies.
+- Write PDF Subject as arrangers unless genres mode is selected. fn2fm was built
+  for Cambrensis, where arrangers were relevant and genres were not, so an unset
+  mode stays arrangers. Genres mode uses `genres.json` (starter
+  `genres.example.json`, editor `fn2fm genres`) for the same underscore slot.
+  `--subject` wins over `./fn2fm.json`, which wins over the per-user setting.
 - Keep the Go layout as `cmd/fn2fm` (CLI), `cmd/buildpackage` (CI packaging), and
   `internal/{filename,names,namesedit,pdfmeta}` for shared logic.
 - Write PDF Info metadata directly with pdfcpu, using incremental updates to
@@ -727,3 +732,18 @@ packaging, licensing and update review; it was not adopted.
   and editor HTTP handlers. Manual smoke on each packaged OS remains advisable
   before a numbered release: create/search/suggest/amend/save/reopen, stale
   overwrite, and a PDF run that resolves the saved path.
+
+## Genres as an alternative to arrangers (13 November 2026)
+
+- Kept the filename grammar. The underscore slot is still one abbreviation.
+  Default subject mode remains arrangers because Cambrensis needed arrangers and
+  did not use genres. forScore still maps PDF Subject to Genres; genres mode is
+  the opt-in that writes genre labels into that field.
+- Mode resolution is `--subject`, then `subject` in `./fn2fm.json`, then the
+  per-user config, then arrangers. `fn2fm subject` prints the effective mode.
+  `fn2fm subject genres --library` pins a shared scores folder. Saving a
+  dictionary path no longer replaces the rest of the user config.
+- Genres mode loads `genres.json` and does not fall back to `names.json`.
+  `genres.example.json` ships a few choral entries, including one comma-separated
+  pair. `fn2fm genres` reuses the names editor with genre labels. Release
+  packages include the example and not a working `genres.json`.
