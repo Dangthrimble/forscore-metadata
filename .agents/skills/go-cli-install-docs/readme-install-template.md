@@ -1,8 +1,12 @@
-# README install section skeleton
+# Install-with-Go guide skeleton (`docs/install-go.md`)
 
 Fill `MODULE`, `CMD` (repeat per command), `MIN_GO`, and `CLONE_URL` from the repo.
 Keep every section in non-technical plain English. Prefer short numbered steps and
 copy-paste commands.
+
+Use this content in `docs/install-go.md` (or an equivalent linked guide). The
+README stays a short hub: upfront “no clone required” note, links to this guide
+and any ZIP install path, then usage/docs map—not the full procedure below.
 
 Start with the upfront note below. For **Git**, **Go**, and **any other dependency**
 needed to install or update the CLIs: include a plain-English description **or** a
