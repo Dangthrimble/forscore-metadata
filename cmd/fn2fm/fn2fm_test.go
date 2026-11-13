@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/Dangthrimble/forscore-metadata/internal/names"
+	"github.com/Dangthrimble/forscore-metadata/internal/pdfmeta"
+	"github.com/Dangthrimble/forscore-metadata/internal/pdftest"
 )
 
 // cliTestEnv isolates subprocesses from any saved dictionary path on the host.
@@ -40,16 +42,16 @@ func TestFN2FMStandaloneCommand(t *testing.T) {
 		input            []byte
 		wantError        bool
 	}{
-		{"no external programs", `{"JoRu":" John Rutter "}`, existingInfoPDF(false), false},
+		{"no external programs", `{"JoRu":" John Rutter "}`, pdftest.ExistingInfoPDF(false), false},
 		{"unsupported input", `{"JoRu":"John Rutter"}`, []byte("not a PDF"), true},
-		{"malformed dictionary", `{"JoRu":`, existingInfoPDF(false), true},
+		{"malformed dictionary", `{"JoRu":`, pdftest.ExistingInfoPDF(false), true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
 			name := "Score ~ JoRu[C].pdf"
 			path := filepath.Join(dir, name)
-			writeTestFile(t, path, tc.input)
-			writeTestFile(t, filepath.Join(dir, "names.json"), []byte(tc.dictionary))
+			pdftest.WriteFile(t, path, tc.input)
+			pdftest.WriteFile(t, filepath.Join(dir, "names.json"), []byte(tc.dictionary))
 			cmd := exec.Command(os.Args[0], "-test.run=^TestFN2FMCLIHelper$", "--", name)
 			cmd.Dir = dir
 			cmd.Env = cliTestEnv(t, "FN2FM_TEST_MAIN=1", "PATH="+dir)
@@ -61,7 +63,7 @@ func TestFN2FMStandaloneCommand(t *testing.T) {
 				t.Fatalf("missing malformed dictionary diagnostic: %s", output)
 			}
 			if tc.wantError {
-				if !bytes.Equal(readTestFile(t, path), tc.input) {
+				if !bytes.Equal(pdftest.ReadFile(t, path), tc.input) {
 					t.Fatal("failed command changed or renamed original PDF")
 				}
 				if _, err := os.Lstat(path + "_original"); !os.IsNotExist(err) {
@@ -69,11 +71,11 @@ func TestFN2FMStandaloneCommand(t *testing.T) {
 				}
 				return
 			}
-			ctx := readTestPDF(t, readTestFile(t, path))
+			ctx := pdftest.ReadPDF(t, pdftest.ReadFile(t, path), pdfmeta.Configuration())
 			if ctx.Title != "Score ~ JoRu[C]" || ctx.Author != "John Rutter" || ctx.Subject != "" || ctx.Keywords != "keysf:0, keymi:0" {
 				t.Fatalf("incorrect CLI metadata: %q / %q / %q / %q", ctx.Title, ctx.Author, ctx.Subject, ctx.Keywords)
 			}
-			if !bytes.Equal(readTestFile(t, path+"_original"), tc.input) {
+			if !bytes.Equal(pdftest.ReadFile(t, path+"_original"), tc.input) {
 				t.Fatal("command did not preserve original backup")
 			}
 		})
@@ -84,9 +86,9 @@ func TestFN2FMRenameFailure(t *testing.T) {
 	dir := t.TempDir()
 	name := "Bad Score.pdf"
 	path := filepath.Join(dir, name)
-	source := existingInfoPDF(false)
-	writeTestFile(t, path, source)
-	writeTestFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":"John Rutter"}`))
+	source := pdftest.ExistingInfoPDF(false)
+	pdftest.WriteFile(t, path, source)
+	pdftest.WriteFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":"John Rutter"}`))
 	if err := os.Mkdir(path+"_rename", 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +103,7 @@ func TestFN2FMRenameFailure(t *testing.T) {
 	if !strings.Contains(string(output), "unable to rename") {
 		t.Fatalf("missing rename failure diagnostic: %s", output)
 	}
-	if !bytes.Equal(readTestFile(t, path), source) {
+	if !bytes.Equal(pdftest.ReadFile(t, path), source) {
 		t.Fatal("failed rename changed or removed the original PDF")
 	}
 }
@@ -116,20 +118,20 @@ func TestFN2FMEmptyKeyCommand(t *testing.T) {
 			dir := t.TempDir()
 			name := "Atonal Score ~ JoRu" + tc.suffix + ".pdf"
 			path := filepath.Join(dir, name)
-			source := existingInfoPDF(false)
-			writeTestFile(t, path, source)
-			writeTestFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":"John Rutter"}`))
+			source := pdftest.ExistingInfoPDF(false)
+			pdftest.WriteFile(t, path, source)
+			pdftest.WriteFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":"John Rutter"}`))
 			cmd := exec.Command(os.Args[0], "-test.run=^TestFN2FMCLIHelper$", "--", name)
 			cmd.Dir = dir
 			cmd.Env = cliTestEnv(t, "FN2FM_TEST_MAIN=1", "PATH="+dir)
 			if output, err := cmd.CombinedOutput(); err != nil {
 				t.Fatalf("command failed: %v\n%s", err, output)
 			}
-			ctx := readTestPDF(t, readTestFile(t, path))
+			ctx := pdftest.ReadPDF(t, pdftest.ReadFile(t, path), pdfmeta.Configuration())
 			if ctx.Title != strings.TrimSuffix(name, ".pdf") || ctx.Author != "John Rutter" || ctx.Keywords != tc.keywords {
 				t.Fatalf("unexpected metadata: title=%q author=%q keywords=%q", ctx.Title, ctx.Author, ctx.Keywords)
 			}
-			if !bytes.Equal(readTestFile(t, path+"_original"), source) {
+			if !bytes.Equal(pdftest.ReadFile(t, path+"_original"), source) {
 				t.Fatal("command did not preserve original backup")
 			}
 		})

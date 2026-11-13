@@ -13,6 +13,7 @@ import (
 
 	"github.com/Dangthrimble/forscore-metadata/internal/names"
 	"github.com/Dangthrimble/forscore-metadata/internal/pdfmeta"
+	"github.com/Dangthrimble/forscore-metadata/internal/pdftest"
 )
 
 // CI supplies the absolute path of a separately built app. Ordinary unit tests
@@ -59,8 +60,8 @@ func TestBuiltExecutable(t *testing.T) {
 		t.Run(tc.filename, func(t *testing.T) {
 			dir := builtCommandDirectory(t)
 			path := filepath.Join(dir, tc.filename)
-			source := readTestFile(t, filepath.Join("..", "..", "testdata", tc.fixture))
-			writeTestFile(t, path, source)
+			source := pdftest.ReadFile(t, filepath.Join("..", "..", "testdata", tc.fixture))
+			pdftest.WriteFile(t, path, source)
 			tc.want.Title = strings.TrimSuffix(tc.filename, ".pdf")
 
 			output, err := runBuiltCommand(t, binary, dir, path)
@@ -78,13 +79,13 @@ func TestBuiltExecutable(t *testing.T) {
 			if err := os.Rename(path+"_original", nextPath+"_original"); err != nil {
 				t.Fatal(err)
 			}
-			first := readTestFile(t, nextPath)
+			first := pdftest.ReadFile(t, nextPath)
 			output, err = runBuiltCommand(t, binary, dir, nextPath)
 			if err != nil {
 				t.Fatalf("second update failed: %v\n%s", err, output)
 			}
 			assertBuiltMetadata(t, nextPath, source, pdfmeta.Metadata{Title: "Updated Score ~ JoRu[0]", Author: "John Rutter"})
-			if !bytes.HasPrefix(readTestFile(t, nextPath), first) {
+			if !bytes.HasPrefix(pdftest.ReadFile(t, nextPath), first) {
 				t.Fatal("second update did not retain the first PDF revision")
 			}
 		})
@@ -94,18 +95,18 @@ func TestBuiltExecutable(t *testing.T) {
 		dir := builtCommandDirectory(t)
 		path := filepath.Join(dir, "Invalid Score ~ JoRu[C]+.pdf")
 		source := []byte("This is not a PDF")
-		writeTestFile(t, path, source)
+		pdftest.WriteFile(t, path, source)
 		output, err := runBuiltCommand(t, binary, dir, path)
 		if err == nil || !strings.Contains(string(output), "Unable to update") {
 			t.Fatalf("expected a reported write failure: %v\n%s", err, output)
 		}
-		if !bytes.Equal(readTestFile(t, path), source) {
+		if !bytes.Equal(pdftest.ReadFile(t, path), source) {
 			t.Fatal("failed command altered the source")
 		}
 		if _, err := os.Lstat(path + "_original"); !os.IsNotExist(err) {
 			t.Fatal("rejected input created a backup")
 		}
-		assertNoTemporaryPDFs(t, dir)
+		pdftest.AssertNoTemporaryPDFs(t, dir)
 	})
 
 	t.Run("Windows open file prevents replacement", func(t *testing.T) {
@@ -114,8 +115,8 @@ func TestBuiltExecutable(t *testing.T) {
 		}
 		dir := builtCommandDirectory(t)
 		path := filepath.Join(dir, "Open Score ~ JoRu[C]+.pdf")
-		source := readTestFile(t, filepath.Join("..", "..", "testdata", "no-info-table.pdf"))
-		writeTestFile(t, path, source)
+		source := pdftest.ReadFile(t, filepath.Join("..", "..", "testdata", "no-info-table.pdf"))
+		pdftest.WriteFile(t, path, source)
 		// Go opens this handle with read/write sharing, but without delete sharing.
 		// The child can read the PDF yet cannot replace it until this handle closes.
 		held, err := os.Open(path)
@@ -127,10 +128,10 @@ func TestBuiltExecutable(t *testing.T) {
 		if err == nil || !strings.Contains(string(output), "replace PDF (original retained)") {
 			t.Fatalf("expected a replacement failure: %v\n%s", err, output)
 		}
-		if !bytes.Equal(readTestFile(t, path), source) || !bytes.Equal(readTestFile(t, path+"_original"), source) {
+		if !bytes.Equal(pdftest.ReadFile(t, path), source) || !bytes.Equal(pdftest.ReadFile(t, path+"_original"), source) {
 			t.Fatal("replacement failure changed original or backup")
 		}
-		assertNoTemporaryPDFs(t, dir)
+		pdftest.AssertNoTemporaryPDFs(t, dir)
 		if err := held.Close(); err != nil {
 			t.Fatal(err)
 		}
@@ -148,7 +149,7 @@ func builtCommandDirectory(t *testing.T) string {
 	if err := os.Mkdir(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	writeTestFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":" John Rutter ","DaFo":" Dan Forrest "}`))
+	pdftest.WriteFile(t, filepath.Join(dir, "names.json"), []byte(`{"JoRu":" John Rutter ","DaFo":" Dan Forrest "}`))
 	return dir
 }
 
@@ -166,14 +167,14 @@ func runBuiltCommand(t *testing.T, binary, dir, path string) ([]byte, error) {
 
 func assertBuiltMetadata(t *testing.T, path string, original []byte, want pdfmeta.Metadata) {
 	t.Helper()
-	updated := readTestFile(t, path)
+	updated := pdftest.ReadFile(t, path)
 	if !bytes.HasPrefix(updated, original) {
 		t.Fatal("source bytes were not preserved")
 	}
-	if !bytes.Equal(readTestFile(t, path+"_original"), original) {
+	if !bytes.Equal(pdftest.ReadFile(t, path+"_original"), original) {
 		t.Fatal("first backup was not preserved")
 	}
-	ctx := readTestPDF(t, updated)
+	ctx := pdftest.ReadPDF(t, updated, pdfmeta.Configuration())
 	if ctx.PageCount != 2 || ctx.Info == nil {
 		t.Fatal("incorrect page count or missing metadata dictionary")
 	}
@@ -193,5 +194,5 @@ func assertBuiltMetadata(t *testing.T, path string, original []byte, want pdfmet
 			t.Errorf("%s = %q, %v; want %q", key, got, err, value)
 		}
 	}
-	assertNoTemporaryPDFs(t, filepath.Dir(path))
+	pdftest.AssertNoTemporaryPDFs(t, filepath.Dir(path))
 }

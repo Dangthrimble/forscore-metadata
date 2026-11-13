@@ -63,12 +63,12 @@ func main() {
 	for _, warning := range dict.Warnings {
 		log.Println(warning)
 	}
-	ca := dict.Entries
+	abbreviations := dict.Entries
 
 	var failed bool
 	for _, file := range files {
 		fmt.Printf("Parsing %q...\n", file)
-		fn, err := filename.ValidateAndExtension(file)
+		fn, err := filename.ValidateFilenameAndExtension(file)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			if !renameRejectedFile(file) {
@@ -86,13 +86,13 @@ func main() {
 			continue
 		}
 
-		comp, err := filename.ParseComposers(md, ca)
+		comp, err := filename.ParseComposers(md, abbreviations)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			continue
 		}
 
-		arr, err := filename.ParseArrangers(md, ca)
+		arr, err := filename.ParseArrangers(md, abbreviations)
 		if err != nil {
 			fmt.Printf("  ERROR: %v\n", err)
 			continue

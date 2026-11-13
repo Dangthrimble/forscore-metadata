@@ -1,4 +1,5 @@
-package main
+// Package pdftest holds shared helpers for PDF-related tests.
+package pdftest
 
 import (
 	"bytes"
@@ -9,13 +10,11 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
-
-	"github.com/Dangthrimble/forscore-metadata/internal/pdfmeta"
 )
 
-// Construct independent PDF objects rather than using the metadata writer to
-// generate its own input. Metadata includes fields which fn2fm must not change.
-func existingInfoPDF(signature bool) []byte {
+// ExistingInfoPDF builds a minimal PDF with an Info dictionary. When signature
+// is true, the catalog includes a signature-bearing AcroForm structure.
+func ExistingInfoPDF(signature bool) []byte {
 	content := "BT /F1 12 Tf 72 700 Td (Keep this score page) Tj ET\n"
 	xmp := `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/" dc:format="application/pdf"/></rdf:RDF></x:xmpmeta>`
 	form := "<< /Fields [] >>"
@@ -53,7 +52,8 @@ func existingInfoPDF(signature bool) []byte {
 	return data.Bytes()
 }
 
-func readTestFile(t *testing.T, path string) []byte {
+// ReadFile reads a file or fails the test.
+func ReadFile(t *testing.T, path string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -62,23 +62,26 @@ func readTestFile(t *testing.T, path string) []byte {
 	return data
 }
 
-func writeTestFile(t *testing.T, path string, data []byte) {
+// WriteFile writes a file or fails the test.
+func WriteFile(t *testing.T, path string, data []byte) {
 	t.Helper()
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func readTestPDF(t *testing.T, data []byte) *model.Context {
+// ReadPDF validates PDF bytes with conf or fails the test.
+func ReadPDF(t *testing.T, data []byte, conf *model.Configuration) *model.Context {
 	t.Helper()
-	ctx, err := api.ReadAndValidate(bytes.NewReader(data), pdfmeta.Configuration())
+	ctx, err := api.ReadAndValidate(bytes.NewReader(data), conf)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return ctx
 }
 
-func assertNoTemporaryPDFs(t *testing.T, dir string) {
+// AssertNoTemporaryPDFs fails if fn2fm temporary PDF files remain in dir.
+func AssertNoTemporaryPDFs(t *testing.T, dir string) {
 	t.Helper()
 	matches, err := filepath.Glob(filepath.Join(dir, ".fn2fm-*.pdf"))
 	if err != nil || len(matches) != 0 {
