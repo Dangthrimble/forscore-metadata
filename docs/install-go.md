@@ -59,6 +59,44 @@ fn2fm --version
 
 If you see version text, the program is installed.
 
+## Dictionaries
+
+`go install` installs only the `fn2fm` program. It does not install or create `names.json` or `genres.json`.
+
+Processing scores needs a `names.json` file. `genres.json` is needed only when PDF Subject is genres. The usual setting is arrangers, which does not read `genres.json`.
+
+Put the working files in the folder you run `fn2fm` from (often beside your scores), or keep them somewhere else and save that path once. If you already have a customised file, do not replace it with the example.
+
+On a first install, pick one of these:
+
+1. **Create them with the editor.** Change to the folder that should hold the file, then run:
+
+   ```bash
+   fn2fm names
+   ```
+
+   Run `fn2fm genres` only if you want genres. The editor opens an empty dictionary. The file is written when you save. See [Using fn2fm](usage.md#browser-dictionary-editor) for the rest of the editor.
+
+2. **Use a shared copy in a sync folder.** Keep `names.json` (and `genres.json` if you use genres) in a folder synced by Box, Dropbox, iCloud, OneDrive, Google Drive, or a similar service. Point the editor at that file:
+
+   ```bash
+   fn2fm names /path/to/shared/names.json
+   ```
+
+   For genres, run `fn2fm genres /path/to/shared/genres.json`. In the editor, choose **Use this dictionary next time**. See [Sharing a dictionary](usage.md#sharing-a-dictionary). Edit one copy at a time.
+
+3. **Copy the starters from the repository.** Follow **This project’s files (optional)** below if you do not already have a local copy, then copy the examples into your scores folder:
+
+   ```bash
+   cd "/path/to/scores"
+   cp /path/to/forscore-metadata/names.example.json names.json
+   cp /path/to/forscore-metadata/genres.example.json genres.json
+   ```
+
+   The second copy is only for genres mode. A later `git pull` updates the example files in the project folder. It does not replace `names.json` or `genres.json` in your scores folder. Do not copy the examples over those working files when you update.
+
+Path rules and day-to-day use are in [Using fn2fm](usage.md#name-dictionary).
+
 ## If `command -v` prints nothing (PATH)
 
 Go puts the program in a `bin` folder that your computer may not search yet.
