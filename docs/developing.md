@@ -12,7 +12,10 @@ repository root. For a local binary during development:
 go build -o dist/fn2fm ./cmd/fn2fm
 ```
 
-On Windows use `dist/fn2fm.exe`. Tests use generated PDF fixtures and temporary
+On Windows use `dist/fn2fm.exe`. A local `go build` reports `dev` from
+`fn2fm --version`. Release archives stamp `--version` from the tag. `go install …@latest` reports the module version from that install.
+
+Tests use generated PDF fixtures and temporary
 folders; no personal score collection is required.
 
 The [build workflow](../.github/workflows/build.yml) runs on pushes and pull requests

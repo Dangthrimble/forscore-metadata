@@ -57,7 +57,7 @@ Then try:
 fn2fm --version
 ```
 
-If you see version text, the program is installed.
+If you see one version line, the program is installed. That line is the module version from this install. It does not need a dictionary or a PDF. A local build prints `dev` instead.
 
 ## Dictionaries
 
