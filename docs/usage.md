@@ -14,7 +14,10 @@ PDF filenames as arguments, quoting names with spaces:
 fn2fm "O Holy Night ~ AdAd_DaFo[Bb]+.pdf"
 fn2fm --names /path/to/names.json "O Holy Night ~ AdAd_DaFo[Bb]+.pdf"
 fn2fm names
+fn2fm --version
 ```
+
+`--version` prints one line and exits `0`. It does not need a dictionary or a PDF. A program installed with `go install` prints the module version. A local build prints `dev`. A release archive prints its tag.
 
 Writer limits, backups, and which PDF fields are updated are described in
 [Filenames and metadata](filename-and-metadata.md#pdf-writing-behaviour).

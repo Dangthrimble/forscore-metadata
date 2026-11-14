@@ -28,14 +28,12 @@ import (
 	"github.com/Dangthrimble/forscore-metadata/internal/names"
 	"github.com/Dangthrimble/forscore-metadata/internal/namesedit"
 	"github.com/Dangthrimble/forscore-metadata/internal/pdfmeta"
+	"github.com/Dangthrimble/forscore-metadata/internal/version"
 )
-
-// Set by the build workflow; source builds retain the development label.
-var version = "dev"
 
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
-		fmt.Printf("fn2fm %s (%s/%s)\n", version, runtime.GOOS, runtime.GOARCH)
+		fmt.Printf("fn2fm %s (%s/%s)\n", version.String(), runtime.GOOS, runtime.GOARCH)
 		return
 	}
 
