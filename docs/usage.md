@@ -137,7 +137,10 @@ automatically.
 
 ### Sharing a dictionary
 
-A small group can keep one `names.json` in a Box, Dropbox or OneDrive folder:
+A small group can keep one `names.json` in a Box, Dropbox, or OneDrive folder.
+Install the provider’s desktop app (or another app that syncs or mounts that
+folder) so the shared folder appears as a normal folder in Finder, File Explorer,
+or your file manager. `fn2fm` only uses a local path.
 
 1. Place the shared `names.json` in the synchronised folder.
 2. Each person runs `fn2fm names /path/to/shared/names.json`, then **Use this
