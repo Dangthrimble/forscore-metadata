@@ -1,6 +1,6 @@
 module github.com/Dangthrimble/forscore-metadata
 
-go 1.26.0
+go 1.26.6
 
 require (
 	github.com/pdfcpu/pdfcpu v0.15.0
