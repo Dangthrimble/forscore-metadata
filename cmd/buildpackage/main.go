@@ -225,7 +225,7 @@ func writeArchive(path, stem string, files []entry) (err error) {
 	for _, file := range files {
 		header := &zip.FileHeader{Name: stem + "/" + file.name, Method: zip.Deflate}
 		header.SetMode(file.mode)
-		header.SetModTime(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+		header.Modified = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 		writer, err := zw.CreateHeader(header)
 		if err != nil {
 			return err

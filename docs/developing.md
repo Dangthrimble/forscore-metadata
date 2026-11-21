@@ -18,10 +18,12 @@ On Windows use `dist/fn2fm.exe`. A local `go build` reports `dev` from
 Tests use generated PDF fixtures and temporary
 folders; no personal score collection is required.
 
-The [build workflow](../.github/workflows/build.yml) runs on pushes and pull requests
-on both macOS architectures, Windows x64/ARM64 and Linux x64/ARM64. Each job checks
-that Go runs natively on the intended OS and architecture, tests the built
-executable with external programs unavailable, and creates a verified package. These checks
+The [CI workflow](../.github/workflows/ci.yml) runs on pushes and pull requests
+on both macOS architectures, Windows x64/ARM64 and Linux x64/ARM64. The race
+detector runs in every native job except Windows ARM64, where Go does not support
+it. Each job checks that Go runs natively on the intended OS and architecture,
+tests the built executable with external programs unavailable, and creates a
+verified package. These checks
 cover metadata, paths with spaces, repeated updates, backups, rejected PDFs and
 replacement failure while a Windows process holds the PDF open.
 

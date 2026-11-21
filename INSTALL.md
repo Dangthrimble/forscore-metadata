@@ -22,7 +22,7 @@ Release packages are named `fn2fm-v<version>-<platform>.zip`, for example
 `fn2fm-v0.3.0-macos-intel.zip`. Use `fn2fm --version` to confirm the stamp
 matches `VERSION.txt`.
 
-For interim testing only, successful **Build and test** runs on the
+For interim testing only, successful **CI** runs on the
 [Actions page](https://github.com/Dangthrimble/forscore-metadata/actions) still publish
 development packages named `fn2fm-dev-<run>-<commit>-<platform>.zip`. Those
 downloads require signing in and are kept for 30 days. See
