@@ -39,7 +39,7 @@ func TestBuiltExecutable(t *testing.T) {
 		if want == "" {
 			want = "dev"
 		}
-		expected := "fn2fm " + want + " (" + runtime.GOOS + "/" + runtime.GOARCH + ")\n"
+		expected := "fn2fm " + want + "\n"
 		if err != nil || string(output) != expected {
 			t.Fatalf("version returned %q, %v; want %q", output, err, expected)
 		}
