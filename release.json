@@ -1,0 +1,6 @@
+{
+  "product": "fn2fm",
+  "module": "github.com/Dangthrimble/forscore-metadata",
+  "commands": ["fn2fm"],
+  "include": ["names.example.json", "genres.example.json"]
+}

@@ -758,3 +758,17 @@ packaging, licensing and update review; it was not adopted.
   v0.44.0 to clear GO-2026-6629.
 - Fixed the formatting of `internal/names/suggest_test.go` and replaced the
   deprecated `zip.FileHeader.SetModTime` call.
+
+## Release packaging (21 November 2026)
+
+- Replaced the fn2fm-specific packager with a shared Go `cmd/buildpackage` driven
+  by `release.json`. It verifies `CGO_ENABLED=0` and `--version`, adds docs,
+  examples, dependency licences, notices and an internal checksum list, and
+  writes a versioned ZIP plus a `.zip.sha256` file.
+- CI now builds and packages natively on all six targets. Release tags are
+  validated as `vMAJOR.MINOR.PATCH`, call CI with the tag as the package version,
+  and publish only after all six archives and the combined `SHA256SUMS.txt`
+  verify.
+- Standardised archives as `fn2fm-v<version>-<platform>.zip` with docs,
+  `BACKLOG.md`, `DEVELOPMENT_HISTORY.md`, `VERSION.txt`, `LICENSE`,
+  `THIRD_PARTY_NOTICES.txt` and `THIRD_PARTY_LICENSES/`.

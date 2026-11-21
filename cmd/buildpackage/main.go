@@ -1,4 +1,4 @@
-// buildpackage creates a portable development archive from a tested executable.
+// buildpackage creates a portable release archive from tested executables.
 package main
 
 import (
@@ -22,63 +22,103 @@ import (
 	"time"
 )
 
+type releaseConfig struct {
+	Product  string   `json:"product"`
+	Module   string   `json:"module"`
+	Commands []string `json:"commands"`
+	Include  []string `json:"include"`
+}
+
 type entry struct {
 	name string
 	data []byte
 	mode fs.FileMode
 }
 
+type binaryList []string
+
+func (b *binaryList) String() string { return strings.Join(*b, ",") }
+
+func (b *binaryList) Set(value string) error {
+	*b = append(*b, value)
+	return nil
+}
+
+var versionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._+-]*$`)
+
 func main() {
-	binary := flag.String("binary", "", "path of the tested executable")
-	version := flag.String("version", "", "version embedded in the executable")
-	out := flag.String("out", "dist/packages", "directory for ZIP and checksum")
+	var binaries binaryList
+	flag.Var(&binaries, "binary", "tested executable to include (repeat for each command)")
+	version := flag.String("version", "", "version embedded in the executables")
+	configPath := flag.String("config", "release.json", "release configuration file")
+	out := flag.String("out", "dist/packages", "directory for the ZIP and checksum")
 	flag.Parse()
-	if err := packageBinary(*binary, *version, *out); err != nil {
+	if err := packageRelease(binaries, *version, *configPath, *out); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func packageBinary(binary, version, out string) error {
-	if binary == "" || !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._+-]*$`).MatchString(version) {
-		return errors.New("supply -binary and a version containing letters, digits, dots, underscores, pluses or hyphens")
+func packageRelease(binaries []string, version, configPath, out string) error {
+	if len(binaries) == 0 {
+		return errors.New("supply at least one -binary")
 	}
-	info, err := buildinfo.ReadFile(binary)
+	if !versionPattern.MatchString(version) {
+		return errors.New("version must contain only letters, digits, dots, underscores, pluses or hyphens")
+	}
+	cfg, err := loadConfig(configPath)
 	if err != nil {
 		return err
 	}
-	settings := map[string]string{}
-	for _, setting := range info.Settings {
-		settings[setting.Key] = setting.Value
+
+	var platform, goos, goarch, goVersion, commit, modified string
+	var dependencies []*debug.Module
+	for _, binary := range binaries {
+		info, err := buildinfo.ReadFile(binary)
+		if err != nil {
+			return fmt.Errorf("%s: %w", binary, err)
+		}
+		settings := settingsMap(info.Settings)
+		binaryOS, binaryArch := settings["GOOS"], settings["GOARCH"]
+		binaryPlatform := platformFor(binaryOS + "/" + binaryArch)
+		if binaryPlatform == "" {
+			return fmt.Errorf("%s: unsupported platform %s/%s", binary, binaryOS, binaryArch)
+		}
+		if settings["CGO_ENABLED"] != "0" {
+			return fmt.Errorf("%s: release executables must be built with CGO_ENABLED=0", binary)
+		}
+		command := strings.TrimSuffix(filepath.Base(binary), ".exe")
+		if !containsString(cfg.Commands, command) {
+			return fmt.Errorf("%s: command %q is not listed in %s", binary, command, configPath)
+		}
+		if info.Path != cfg.Module+"/cmd/"+command {
+			return fmt.Errorf("%s: build path is %q, expected %q", binary, info.Path, cfg.Module+"/cmd/"+command)
+		}
+		if platform == "" {
+			platform, goos, goarch = binaryPlatform, binaryOS, binaryArch
+			goVersion, commit, modified = info.GoVersion, settings["vcs.revision"], settings["vcs.modified"]
+			dependencies = info.Deps
+		} else if binaryPlatform != platform {
+			return fmt.Errorf("%s: platform %s differs from %s", binary, binaryPlatform, platform)
+		}
+
+		absolute, err := filepath.Abs(binary)
+		if err != nil {
+			return err
+		}
+		output, err := exec.Command(absolute, "--version").CombinedOutput()
+		if err != nil || !strings.Contains(string(output), version) {
+			return fmt.Errorf("%s: --version does not report %q: %q (%v)", binary, version, output, err)
+		}
 	}
-	osName, arch := settings["GOOS"], settings["GOARCH"]
-	platform := map[string]string{
-		"darwin/amd64":  "macos-intel",
-		"darwin/arm64":  "macos-apple-silicon",
-		"windows/amd64": "windows-x64",
-		"windows/arm64": "windows-arm64",
-		"linux/amd64":   "linux-x64",
-		"linux/arm64":   "linux-arm64",
-	}[osName+"/"+arch]
-	if info.Path != "github.com/Dangthrimble/forscore-metadata/cmd/fn2fm" || platform == "" || settings["CGO_ENABLED"] != "0" {
-		return errors.New("expected a standalone fn2fm binary for a supported platform")
+	if commit == "" {
+		commit = "unknown"
 	}
-	absoluteBinary, err := filepath.Abs(binary)
-	if err != nil {
-		return err
+	if modified == "" {
+		modified = "unknown"
 	}
-	// Trimmed builds do not reliably retain linker flags in build information.
-	// Packaging runs on the target platform, so ask the actual executable.
-	versionOutput, err := exec.Command(absoluteBinary, "--version").Output()
-	if err != nil || string(versionOutput) != fmt.Sprintf("fn2fm %s (%s/%s)\n", version, osName, arch) {
-		return fmt.Errorf("executable does not report the requested version/target: %q (%v)", versionOutput, err)
-	}
-	stem := "fn2fm-" + version + "-" + platform
-	executable := "fn2fm"
-	if osName == "windows" {
-		executable += ".exe"
-	}
-	var files []entry
+
+	files := make([]entry, 0, 32)
 	add := func(name, path string, mode fs.FileMode) error {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -87,41 +127,47 @@ func packageBinary(binary, version, out string) error {
 		files = append(files, entry{name, data, mode})
 		return nil
 	}
-	for _, file := range []struct {
-		name, path string
-		mode       fs.FileMode
-	}{
-		{executable, binary, 0755},
-		{"INSTALL.md", "INSTALL.md", 0644},
-		{"README.md", "README.md", 0644},
-		{"docs/install-go.md", "docs/install-go.md", 0644},
-		{"docs/usage.md", "docs/usage.md", 0644},
-		{"docs/filename-and-metadata.md", "docs/filename-and-metadata.md", 0644},
-		{"docs/developing.md", "docs/developing.md", 0644},
-		{"BACKLOG.md", "BACKLOG.md", 0644},
-		{"DEVELOPMENT_HISTORY.md", "DEVELOPMENT_HISTORY.md", 0644},
-		{"LICENSE", "LICENSE", 0644},
-		{"names.example.json", "names.example.json", 0644},
-		{"genres.example.json", "genres.example.json", 0644},
-	} {
-		if err := add(file.name, file.path, file.mode); err != nil {
+	for _, binary := range binaries {
+		if err := add(filepath.Base(binary), binary, 0755); err != nil {
 			return err
 		}
 	}
+	for _, name := range []string{"README.md", "INSTALL.md", "LICENSE", "BACKLOG.md", "DEVELOPMENT_HISTORY.md"} {
+		if err := add(name, name, 0644); err != nil {
+			return err
+		}
+	}
+	docs, err := collectDocs("docs")
+	if err != nil {
+		return err
+	}
+	files = append(files, docs...)
+	for _, name := range cfg.Include {
+		clean := filepath.ToSlash(filepath.Clean(name))
+		if err := add(clean, name, 0644); err != nil {
+			return err
+		}
+	}
+
 	buildKind := "Development build"
 	if strings.HasPrefix(version, "v") && !strings.HasPrefix(version, "dev-") {
 		buildKind = "Release build"
 	}
-	versionText := fmt.Sprintf("fn2fm %s\nPlatform: %s (%s/%s)\nCommit: %s\nSource modified: %s\nGo: %s\n%s; updates are manual.\n", version, platform, osName, arch, settings["vcs.revision"], settings["vcs.modified"], info.GoVersion, buildKind)
+	versionText := fmt.Sprintf(
+		"%s %s\nPlatform: %s (%s/%s)\nCommit: %s\nSource modified: %s\nGo: %s\n%s; updates are manual.\n",
+		cfg.Product, version, platform, goos, goarch, commit, modified, goVersion, buildKind,
+	)
 	files = append(files, entry{"VERSION.txt", []byte(versionText), 0644})
-	licenses, err := dependencyLicenses(info.Deps)
+	licenses, err := dependencyLicenses(dependencies, cfg.Product)
 	if err != nil {
 		return err
 	}
 	files = append(files, licenses...)
+
 	if err := os.MkdirAll(out, 0755); err != nil {
 		return err
 	}
+	stem := fmt.Sprintf("%s-%s-%s", cfg.Product, version, platform)
 	archivePath := filepath.Join(out, stem+".zip")
 	if err := writeArchive(archivePath, stem, files); err != nil {
 		return err
@@ -138,21 +184,114 @@ func packageBinary(binary, version, out string) error {
 	return nil
 }
 
-func dependencyLicenses(deps []*debug.Module) ([]entry, error) {
+func loadConfig(path string) (releaseConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return releaseConfig{}, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	var cfg releaseConfig
+	if err := decoder.Decode(&cfg); err != nil {
+		return releaseConfig{}, fmt.Errorf("%s: %w", path, err)
+	}
+	if !versionPattern.MatchString(cfg.Product) {
+		return releaseConfig{}, fmt.Errorf("%s: invalid product %q", path, cfg.Product)
+	}
+	if strings.TrimSpace(cfg.Module) == "" {
+		return releaseConfig{}, fmt.Errorf("%s: module is required", path)
+	}
+	if len(cfg.Commands) == 0 {
+		return releaseConfig{}, fmt.Errorf("%s: at least one command is required", path)
+	}
+	seen := map[string]bool{}
+	for _, command := range cfg.Commands {
+		if command == "" || command == "." || command == ".." || strings.ContainsAny(command, `/\`) {
+			return releaseConfig{}, fmt.Errorf("%s: invalid command %q", path, command)
+		}
+		if seen[command] {
+			return releaseConfig{}, fmt.Errorf("%s: duplicate command %q", path, command)
+		}
+		seen[command] = true
+	}
+	for _, include := range cfg.Include {
+		clean := filepath.Clean(include)
+		if filepath.IsAbs(clean) || clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(os.PathSeparator)) {
+			return releaseConfig{}, fmt.Errorf("%s: include %q must stay inside the repository", path, include)
+		}
+	}
+	return cfg, nil
+}
+
+func settingsMap(settings []debug.BuildSetting) map[string]string {
+	out := make(map[string]string, len(settings))
+	for _, setting := range settings {
+		out[setting.Key] = setting.Value
+	}
+	return out
+}
+
+func platformFor(target string) string {
+	return map[string]string{
+		"darwin/amd64":  "macos-intel",
+		"darwin/arm64":  "macos-apple-silicon",
+		"windows/amd64": "windows-x64",
+		"windows/arm64": "windows-arm64",
+		"linux/amd64":   "linux-x64",
+		"linux/arm64":   "linux-arm64",
+	}[target]
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func collectDocs(root string) ([]entry, error) {
+	var files []entry
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || !d.Type().IsRegular() {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		files = append(files, entry{filepath.ToSlash(path), data, 0644})
+		return nil
+	})
+	return files, err
+}
+
+func dependencyLicenses(deps []*debug.Module, product string) ([]entry, error) {
 	var files []entry
 	var index strings.Builder
-	index.WriteString("Third-party software included in this build\n\nfn2fm is licensed under the MIT licence; see LICENSE.\nThe dependencies listed below retain their own licences and notices.\n\n")
-	goRoot, err := exec.Command("go", "env", "GOROOT").Output()
+	index.WriteString("Third-party software included in this build\n\n")
+	index.WriteString(product + " is licensed under the MIT licence; see LICENSE.\n")
+	index.WriteString("The dependencies listed below retain their own licences and notices.\n\n")
+
+	goRootOutput, err := exec.Command("go", "env", "GOROOT").Output()
 	if err != nil {
 		return nil, err
 	}
-	data, err := os.ReadFile(filepath.Join(strings.TrimSpace(string(goRoot)), "LICENSE"))
+	data, err := goLicense(strings.TrimSpace(string(goRootOutput)))
 	if err != nil {
 		return nil, err
 	}
 	files = append(files, entry{"THIRD_PARTY_LICENSES/Go/LICENSE", data, 0644})
 	index.WriteString("Go standard library/runtime: THIRD_PARTY_LICENSES/Go/LICENSE\n")
+
 	for _, dep := range deps {
+		if dep == nil || dep.Path == "" {
+			continue
+		}
 		if dep.Replace != nil {
 			return nil, fmt.Errorf("cannot package an unreviewed module replacement: %s", dep.Path)
 		}
@@ -204,13 +343,43 @@ func dependencyLicenses(deps []*debug.Module) ([]entry, error) {
 	return files, nil
 }
 
+func goLicense(goRoot string) ([]byte, error) {
+	candidates := []string{filepath.Join(goRoot, "LICENSE")}
+	// Package-managed Go installations sometimes place the licence in a
+	// versioned documentation directory instead of the GOROOT root.
+	for _, pattern := range []string{
+		filepath.Join(goRoot, "..", "share", "doc", "go*", "LICENSE"),
+		filepath.Join(goRoot, "..", "..", "share", "doc", "go*", "LICENSE"),
+	} {
+		if matches, err := filepath.Glob(pattern); err == nil {
+			candidates = append(candidates, matches...)
+		}
+	}
+	for _, path := range candidates {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			return data, nil
+		}
+	}
+	return nil, fmt.Errorf("go licence not found under %s", goRoot)
+}
+
 func writeArchive(path, stem string, files []entry) (err error) {
+	seen := map[string]bool{}
+	for _, file := range files {
+		if seen[file.name] {
+			return fmt.Errorf("duplicate package member %s", file.name)
+		}
+		seen[file.name] = true
+	}
 	sort.Slice(files, func(i, j int) bool { return files[i].name < files[j].name })
+
 	var manifest strings.Builder
 	for _, file := range files {
 		fmt.Fprintf(&manifest, "%x  %s\n", sha256.Sum256(file.data), file.name)
 	}
 	files = append(files, entry{"SHA256SUMS.txt", []byte(manifest.String()), 0644})
+
 	output, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -221,12 +390,12 @@ func writeArchive(path, stem string, files []entry) (err error) {
 			os.Remove(path)
 		}
 	}()
-	zw := zip.NewWriter(output)
+	archive := zip.NewWriter(output)
 	for _, file := range files {
 		header := &zip.FileHeader{Name: stem + "/" + file.name, Method: zip.Deflate}
 		header.SetMode(file.mode)
 		header.Modified = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-		writer, err := zw.CreateHeader(header)
+		writer, err := archive.CreateHeader(header)
 		if err != nil {
 			return err
 		}
@@ -234,28 +403,28 @@ func writeArchive(path, stem string, files []entry) (err error) {
 			return err
 		}
 	}
-	if err := zw.Close(); err != nil {
+	if err := archive.Close(); err != nil {
 		return err
 	}
 	if err := output.Close(); err != nil {
 		return err
 	}
-	// Reopen the ZIP and compare every byte and mode to the intended package.
-	archive, err := zip.OpenReader(path)
+
+	reader, err := zip.OpenReader(path)
 	if err != nil {
 		return err
 	}
-	defer archive.Close()
-	if len(archive.File) != len(files) {
+	defer reader.Close()
+	if len(reader.File) != len(files) {
 		return errors.New("package verification failed: wrong file count")
 	}
-	for i, file := range archive.File {
-		reader, err := file.Open()
+	for i, file := range reader.File {
+		content, err := file.Open()
 		if err != nil {
 			return err
 		}
-		data, err := io.ReadAll(reader)
-		reader.Close()
+		data, err := io.ReadAll(content)
+		content.Close()
 		want := files[i]
 		if err != nil || file.Name != stem+"/"+want.name || file.Mode().Perm() != want.mode || !bytes.Equal(data, want.data) {
 			return fmt.Errorf("package verification failed: %s", file.Name)
