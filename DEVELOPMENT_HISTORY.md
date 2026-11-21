@@ -747,3 +747,14 @@ packaging, licensing and update review; it was not adopted.
   `genres.example.json` ships a few choral entries, including one comma-separated
   pair. `fn2fm genres` reuses the names editor with genre labels. Release
   packages include the example and not a working `genres.json`.
+
+## Standardised CI (20 November 2026)
+
+- Added race tests on every native target except Windows ARM64, plus gofmt,
+  staticcheck and govulncheck checks, and a required `CI gate` job; renamed the
+  workflow from `build.yml` to `ci.yml`.
+- Raised the minimum Go version to 1.26.11 to clear standard-library
+  vulnerabilities including GO-2026-6088, and upgraded `golang.org/x/text` to
+  v0.44.0 to clear GO-2026-6629.
+- Fixed the formatting of `internal/names/suggest_test.go` and replaced the
+  deprecated `zip.FileHeader.SetModTime` call.

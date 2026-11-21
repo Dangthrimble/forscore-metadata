@@ -1,10 +1,10 @@
 module github.com/Dangthrimble/forscore-metadata
 
-go 1.25.0
+go 1.26.11
 
 require (
 	github.com/pdfcpu/pdfcpu v0.15.0
-	golang.org/x/text v0.40.0
+	golang.org/x/text v0.44.0
 )
 
 require (

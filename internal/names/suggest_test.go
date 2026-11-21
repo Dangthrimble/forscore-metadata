@@ -48,9 +48,9 @@ func TestSuggestUniqueness(t *testing.T) {
 
 func TestSimilarNames(t *testing.T) {
 	existing := map[string]string{
-		"JoRu":  "John Rutter",
-		"DaFo":  "Dan Forrest",
-		"JoSt":  "John Stainer",
+		"JoRu":   "John Rutter",
+		"DaFo":   "Dan Forrest",
+		"JoSt":   "John Stainer",
 		"CtEcMr": "Chris Tomlin, Ed Cash, Matt Redman",
 	}
 	got := SimilarNames("John Rutter", existing, "")
