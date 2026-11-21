@@ -6,10 +6,16 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      version:
-        description: Optional package/version stamp (e.g. v0.1.0)
+      package-version:
+        description: Optional version stamp (default ci-<sha>)
         required: false
         type: string
+  workflow_call:
+    inputs:
+      package-version:
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -18,9 +24,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GOFLAGS: -mod=readonly
+  PACKAGE_VERSION: ${{ inputs.package-version || format('ci-{0}', github.sha) }}
+  PRODUCT: fn2fm
+  MODULE: github.com/Dangthrimble/forscore-metadata
+  BINARIES: fn2fm
+
 jobs:
   build:
-    name: ${{ matrix.platform }}
+    name: Test and package (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     strategy:
@@ -31,46 +44,39 @@ jobs:
             runner: macos-15-intel
             goos: darwin
             goarch: amd64
-            binary: fn2fm
           - platform: macos-apple-silicon
             runner: macos-15
             goos: darwin
             goarch: arm64
-            binary: fn2fm
           - platform: windows-x64
             runner: windows-2025
             goos: windows
             goarch: amd64
-            binary: fn2fm.exe
           - platform: windows-arm64
             runner: windows-11-arm
             goos: windows
             goarch: arm64
-            binary: fn2fm.exe
           - platform: linux-x64
             runner: ubuntu-24.04
             goos: linux
             goarch: amd64
-            binary: fn2fm
           - platform: linux-arm64
             runner: ubuntu-24.04-arm
             goos: linux
             goarch: arm64
-            binary: fn2fm
     defaults:
       run:
-        shell: pwsh
+        shell: bash
     env:
       CGO_ENABLED: '0'
       GOWORK: 'off'
       GOTOOLCHAIN: local
-      GOFLAGS: -mod=readonly
       GOOS: ${{ matrix.goos }}
       GOARCH: ${{ matrix.goarch }}
 
     steps:
       - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -82,15 +88,13 @@ jobs:
 
       - name: Verify native build target
         run: |
-          if ((go env GOHOSTOS) -ne $env:GOOS -or (go env GOHOSTARCH) -ne $env:GOARCH) {
-            throw "Go host does not match the requested native target $env:GOOS/$env:GOARCH"
-          }
+          if [ "$(go env GOHOSTOS)" != "$GOOS" ] || [ "$(go env GOHOSTARCH)" != "$GOARCH" ]; then
+            echo "Go host does not match the requested native target $GOOS/$GOARCH" >&2
+            exit 1
+          fi
 
-      - name: Download modules
-        run: go mod download
-
-      - name: Verify modules
-        run: go mod verify
+      - run: go mod download
+      - run: go mod verify
 
       - name: Run tests
         run: go test -count=1 -v ./...
@@ -101,35 +105,38 @@ jobs:
           CGO_ENABLED: '1'
         run: go test -count=1 -race ./...
 
-      - name: Run vet
-        run: go vet ./...
+      - run: go vet ./...
 
-      - name: Identify package version
+      - name: Build release executable
         run: |
-          if ('${{ inputs.version }}' -ne '') {
-            $version = '${{ inputs.version }}'
-          } else {
-            $version = "dev-$env:GITHUB_RUN_NUMBER-$($env:GITHUB_SHA.Substring(0, 12))"
-          }
-          "FN2FM_VERSION=$version" >> $env:GITHUB_ENV
-
-      - name: Build versioned standalone executable
-        run: go build -trimpath -ldflags "-X github.com/Dangthrimble/forscore-metadata/internal/version.Version=$env:FN2FM_VERSION" -o "dist/${{ matrix.binary }}" ./cmd/fn2fm
+          mkdir -p dist/bin
+          ext=""
+          if [ "$(go env GOOS)" = "windows" ]; then ext=".exe"; fi
+          go build -trimpath -ldflags "-X ${MODULE}/internal/version.Version=${PACKAGE_VERSION}" -o "dist/bin/fn2fm${ext}" ./cmd/fn2fm
 
       - name: Test the built executable on disposable PDFs
         run: |
-          $env:FN2FM_TEST_BINARY = (Resolve-Path -LiteralPath 'dist/${{ matrix.binary }}').Path
-          $env:FN2FM_TEST_VERSION = $env:FN2FM_VERSION
+          ext=""
+          if [ "$(go env GOOS)" = "windows" ]; then ext=".exe"; fi
+          binary="$(pwd)/dist/bin/fn2fm${ext}"
+          if command -v cygpath >/dev/null 2>&1; then
+            binary="$(cygpath -w "$binary")"
+          fi
+          FN2FM_TEST_BINARY="$binary" \
+          FN2FM_TEST_VERSION="${PACKAGE_VERSION}" \
           go test -count=1 -v -run '^TestBuiltExecutable$' ./cmd/fn2fm
 
       - name: Package executable and instructions
-        run: go run ./cmd/buildpackage -binary "dist/${{ matrix.binary }}" -version "$env:FN2FM_VERSION"
+        run: |
+          ext=""
+          if [ "$(go env GOOS)" = "windows" ]; then ext=".exe"; fi
+          go run ./cmd/buildpackage -binary "dist/bin/fn2fm${ext}" -version "${PACKAGE_VERSION}" -out dist/packages
 
       - name: Upload package
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: fn2fm-${{ env.FN2FM_VERSION }}-${{ matrix.platform }}
+          name: release-package-${{ matrix.platform }}
           path: dist/packages/*
           if-no-files-found: error
           compression-level: 0

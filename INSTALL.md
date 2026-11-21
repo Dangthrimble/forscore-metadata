@@ -34,7 +34,7 @@ Extract the downloaded ZIP (for Actions artifacts, extract the outer artifact,
 then the versioned ZIP inside). Keep the extracted folder together: it contains
 the executable, this guide, README, the `docs/` guides, `BACKLOG.md`,
 `DEVELOPMENT_HISTORY.md`, `VERSION.txt`, checksums, a starter dictionary,
-`LICENSE` and dependency notices.
+`LICENSE`, `THIRD_PARTY_NOTICES.txt` and `THIRD_PARTY_LICENSES/`.
 
 ## macOS
 
@@ -151,8 +151,9 @@ On Linux, use `sha256sum` with the downloaded ZIP filename. In PowerShell, use:
 Get-FileHash -Algorithm SHA256 -LiteralPath 'fn2fm-v0.3.0-windows-x64.zip'
 ```
 
-For development packages from Actions, use the `fn2fm-dev-<run>-<commit>-…`
-filename instead. The ZIP also includes `SHA256SUMS.txt` for its contents.
+For development packages from Actions, use the `fn2fm-ci-<sha>-<platform>.zip`
+filename instead. The release also provides a combined `SHA256SUMS.txt`, and each
+ZIP includes its own `SHA256SUMS.txt` for its members.
 Checksums detect changed or incomplete files; they do not provide a publisher
 signature.
 
