@@ -772,3 +772,12 @@ packaging, licensing and update review; it was not adopted.
 - Standardised archives as `fn2fm-v<version>-<platform>.zip` with docs,
   `BACKLOG.md`, `DEVELOPMENT_HISTORY.md`, `VERSION.txt`, `LICENSE`,
   `THIRD_PARTY_NOTICES.txt` and `THIRD_PARTY_LICENSES/`.
+
+## Command-line consistency (21 November 2026)
+
+- `fn2fm --version` now prints `fn2fm <version>`; the platform is recorded in
+  each package's `VERSION.txt`.
+- Added `--` as the end-of-flags marker so filenames beginning with `-` can be
+  processed.
+- Kept usage errors at exit `2`, runtime failures at exit `1`, and `--help` at
+  exit `0`.

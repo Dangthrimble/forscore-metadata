@@ -18,10 +18,10 @@ Usage:
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/Dangthrimble/forscore-metadata/internal/filename"
@@ -31,15 +31,24 @@ import (
 	"github.com/Dangthrimble/forscore-metadata/internal/version"
 )
 
+type usageError struct {
+	err error
+}
+
+func (e usageError) Error() string { return e.err.Error() }
+
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
-		fmt.Printf("fn2fm %s (%s/%s)\n", version.String(), runtime.GOOS, runtime.GOARCH)
+		fmt.Printf("fn2fm %s\n", version.String())
 		return
 	}
 
 	if len(os.Args) >= 2 && os.Args[1] == "names" {
 		if err := namesedit.Run(namesedit.Names, os.Args[2:]); err != nil {
 			fmt.Fprintf(os.Stderr, "fn2fm names: %v\n", err)
+			if errors.Is(err, namesedit.ErrUsage) {
+				os.Exit(2)
+			}
 			os.Exit(1)
 		}
 		return
@@ -47,6 +56,9 @@ func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "genres" {
 		if err := namesedit.Run(namesedit.Genres, os.Args[2:]); err != nil {
 			fmt.Fprintf(os.Stderr, "fn2fm genres: %v\n", err)
+			if errors.Is(err, namesedit.ErrUsage) {
+				os.Exit(2)
+			}
 			os.Exit(1)
 		}
 		return
@@ -54,6 +66,10 @@ func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "subject" {
 		if err := runSubject(os.Args[2:]); err != nil {
 			fmt.Fprintf(os.Stderr, "fn2fm subject: %v\n", err)
+			var usage usageError
+			if errors.As(err, &usage) {
+				os.Exit(2)
+			}
 			os.Exit(1)
 		}
 		return
@@ -187,6 +203,9 @@ func parseArgs(args []string) (runFlags, []string) {
 		case arg == "--help" || arg == "-h":
 			printUsage()
 			os.Exit(0)
+		case arg == "--":
+			files = append(files, args[i+1:]...)
+			i = len(args)
 		case strings.HasPrefix(arg, "-"):
 			fmt.Fprintf(os.Stderr, "fn2fm: unknown flag %s\n", arg)
 			os.Exit(2)
@@ -229,16 +248,16 @@ func runSubject(args []string) error {
 			printUsage()
 			return nil
 		case strings.HasPrefix(arg, "-"):
-			return fmt.Errorf("unknown flag %s", arg)
+			return usageError{fmt.Errorf("unknown flag %s", arg)}
 		default:
 			if mode != "" {
-				return fmt.Errorf("usage: fn2fm subject [arrangers|genres] [--library]")
+				return usageError{fmt.Errorf("usage: fn2fm subject [arrangers|genres] [--library]")}
 			}
 			mode = arg
 		}
 	}
 	if library && mode == "" {
-		return fmt.Errorf("--library requires arrangers or genres")
+		return usageError{fmt.Errorf("--library requires arrangers or genres")}
 	}
 	if mode != "" {
 		if library {

@@ -17,7 +17,12 @@ fn2fm names
 fn2fm --version
 ```
 
-`--version` prints one line and exits `0`. It does not need a dictionary or a PDF. A program installed with `go install` prints the module version. A local build prints `dev`. A release archive prints its tag.
+Use `--` before a filename that begins with a hyphen.
+
+`--version` prints `fn2fm <version>` and exits `0`. It does not need a dictionary or a PDF. A program installed with `go install` prints the module version. A local build prints `dev`. A release archive prints its tag.
+
+Exit status is `0` on success, `2` for a usage or option error, and `1` for a
+processing failure.
 
 Writer limits, backups, and which PDF fields are updated are described in
 [Filenames and metadata](filename-and-metadata.md#pdf-writing-behaviour).

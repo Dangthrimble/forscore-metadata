@@ -1,6 +1,7 @@
 package namesedit
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -14,11 +15,14 @@ import (
 	"github.com/Dangthrimble/forscore-metadata/internal/names"
 )
 
+// ErrUsage marks a command-line usage error.
+var ErrUsage = errors.New("usage")
+
 // Run starts the local dictionary editor. args may contain an optional path.
 func Run(kind Kind, args []string) error {
 	var flagPath string
 	if len(args) > 1 {
-		return fmt.Errorf("usage: %s", kind.Usage)
+		return fmt.Errorf("%w: %s", ErrUsage, kind.Usage)
 	}
 	if len(args) == 1 {
 		flagPath = args[0]
