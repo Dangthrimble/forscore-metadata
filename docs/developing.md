@@ -54,3 +54,23 @@ The [release workflow](../.github/workflows/release.yml) accepts only
 `vMAJOR.MINOR.PATCH` tags, calls the CI workflow with the tag as the package
 version, and publishes the six archives and a combined `SHA256SUMS.txt` only
 after every package has verified.
+
+## Repository settings
+
+Maintainer-only GitHub settings are applied with:
+
+```bash
+./scripts/apply-repo-settings.sh
+```
+
+The script requires `gh` authentication with admin access. It sets the
+description, topics, squash-only merging, automatic branch deletion, secret
+scanning and push protection, Dependabot alerts and automated security fixes,
+SHA-pinned Actions, read-only default workflow tokens, and the required
+`CI gate` status check.
+
+Use `--check` to report drift without changing anything:
+
+```bash
+./scripts/apply-repo-settings.sh --check
+```

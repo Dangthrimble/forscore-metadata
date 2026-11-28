@@ -781,3 +781,12 @@ packaging, licensing and update review; it was not adopted.
   processed.
 - Kept usage errors at exit `2`, runtime failures at exit `1`, and `--help` at
   exit `0`.
+
+## Repository settings and templates (21 November 2026)
+
+- Added `scripts/apply-repo-settings.sh`, the idempotent maintainer script for
+  description, topics, squash-only merging, branch deletion, secret scanning,
+  Dependabot alerts, SHA-pinned Actions, read-only workflow tokens and the
+  required `CI gate` check.
+- Added weekly Dependabot updates for Go modules and GitHub Actions, issue and
+  pull-request templates, and `SECURITY.md`.
